@@ -1,0 +1,3 @@
+This is a test file with a few bytes worth of content. It is read in 
+manually from the file system and then compared with what 
+the virtual filesystem returns.

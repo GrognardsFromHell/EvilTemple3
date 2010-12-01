@@ -1,0 +1,13 @@
+_ReSharper.*
+obj
+*.opensdf
+*.sdf
+bin
+debug
+release
+*.vcxproj*
+*.suo
+*.pdb
+Makefile
+ipch
+*.user
