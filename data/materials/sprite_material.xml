@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<material xmlns="http://hartte.de/eviltemple/material.xsd">
+
+  <pass>
+    <shader>
+      <vertexShader version="120">
+        <code>
+          <![CDATA[
+uniform int displayMode = 0; // 0 = Sprite, 1 = Disc
+uniform mat4 worldViewMatrix;
+uniform mat4 projectionMatrix;
+
+attribute vec3 vertexPosition;
+attribute float vertexType;
+attribute float particleScale;
+attribute float particleRotation;
+attribute vec4 particleColor;
+
+varying vec2 texCoord;
+varying vec4 color;
+varying float rotation;
+
+uniform vec2 texCoords[4];
+
+uniform vec4 positionOffsetsSprite[4];
+
+uniform vec4 positionOffsetsDisc[4];
+
+void main() {
+  vec4 positionOffset;
+  vec4 pos;
+
+  if (displayMode == 0) {
+    positionOffset = particleScale * positionOffsetsSprite[int(vertexType)];
+    pos = worldViewMatrix * vec4(vertexPosition, 1) + positionOffset;
+  } else {
+    positionOffset = particleScale * positionOffsetsDisc[int(vertexType)];
+    pos = worldViewMatrix * (vec4(vertexPosition, 1) + positionOffset);
+  }
+
+  color = particleColor;
+  rotation = particleRotation;
+
+  texCoord = texCoords[int(vertexType)];
+
+  pos = projectionMatrix * pos;
+
+  gl_Position = pos;
+}
+]]>
+        </code>
+      </vertexShader>
+
+      <fragmentShader version="120">
+        <code>
+          <![CDATA[
+uniform sampler2D texSampler;
+
+varying vec2 texCoord;
+varying vec4 color;
+varying float rotation;
+
+const vec2 pivot = vec2(0.5, 0.5); // Pivot on the texture
+
+void main() {
+  float rotationRadians = radians(rotation);
+
+  mat2 mTexRotate = mat2(cos(rotationRadians), sin(rotationRadians),
+    -sin(rotationRadians), cos(rotationRadians)
+  );
+
+  vec2 newTexCoord = mTexRotate * (texCoord - pivot) + pivot;
+
+  vec4 texel = color * texture2D(texSampler, newTexCoord);
+
+  if (texel.a <= 0.01)
+      discard;
+
+  gl_FragColor = texel;
+}
+]]>
+        </code>
+      </fragmentShader>
+
+      <attribute name="vertexPosition" buffer="positions" components="3" />
+      <attribute name="vertexType" buffer="type" components="1" type="integer" />
+      <attribute name="particleScale" buffer="scale" components="1" />
+      <attribute name="particleRotation" buffer="rotation" components="1" />
+      <attribute name="particleColor" buffer="color" components="4" type="unsigned_byte" normalized="true" />
+      <uniform name="worldViewMatrix" semantic="WorldView" />
+      <uniform name="projectionMatrix" semantic="Projection" />
+      <uniform name="texSampler" semantic="Texture0" />
+    </shader>
+    <cullFace>false</cullFace>
+  </pass>
+
+</material>

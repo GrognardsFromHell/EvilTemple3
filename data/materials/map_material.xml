@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<material xmlns="http://hartte.de/eviltemple/material.xsd">
+
+  <pass>
+    <shader>
+      <vertexShader>
+        <code>
+          <![CDATA[
+#version 120
+
+uniform mat4 projMatrix;
+uniform mat4 viewMatrix;
+
+attribute vec4 vertexPosition;
+attribute vec2 vertexTexCoord;
+
+uniform int tilePos[2];
+
+varying vec2 texCoord;
+
+void main() {
+  vec4 transformedPosition = vertexPosition;
+  transformedPosition.x += 256 * tilePos[0];
+  transformedPosition.y -= 256 * tilePos[1];
+
+  // Apply view matrix translation
+  transformedPosition.x += viewMatrix[3][0];
+  transformedPosition.y += viewMatrix[3][1];
+
+  gl_Position = projMatrix * transformedPosition;
+  texCoord = vertexTexCoord;
+}
+]]>
+        </code>
+      </vertexShader>
+
+      <fragmentShader>
+        <code>
+        <![CDATA[
+#version 120
+
+uniform sampler2D texSampler;
+
+uniform vec4 color;
+
+varying vec2 texCoord;
+
+void main() {
+    gl_FragColor = color * texture2D(texSampler, texCoord);
+}
+]]>
+        </code>
+      </fragmentShader>
+
+      <attribute name="vertexPosition" buffer="positions" />
+      <attribute name="vertexTexCoord" buffer="texCoords" components="2" />
+      <uniform name="projMatrix" semantic="Projection" />
+      <uniform name="viewMatrix" semantic="View" />
+      <uniform name="texSampler" semantic="Texture0" />
+    </shader>
+
+    <depthWrite>false</depthWrite>
+  </pass>
+
+</material>

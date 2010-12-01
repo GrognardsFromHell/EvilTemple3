@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<material xmlns="http://hartte.de/eviltemple/material.xsd">
+
+  <pass>
+    <shader>
+      <vertexShader>
+        <code>
+          <![CDATA[
+#version 120
+
+uniform mat4 worldViewProjection;
+
+uniform vec4 center;
+
+attribute vec4 vertexPosition;
+attribute vec2 vertexTexCoord;
+
+varying vec2 vposRel;
+varying vec2 texCoord;
+varying float distance;
+
+void main() {
+  vposRel = vec2(vertexPosition.x, vertexPosition.y);
+  gl_Position = worldViewProjection * vertexPosition;
+  texCoord = vertexTexCoord;
+}
+]]>
+        </code>
+      </vertexShader>
+
+      <fragmentShader>
+        <code>
+          <![CDATA[
+#version 120
+
+uniform int type;
+uniform sampler2D texSampler;
+uniform float attenuation;
+uniform float range;
+
+varying vec2 texCoord;
+
+void main() {
+  vec4 texel = texture2D(texSampler, texCoord);
+
+  float distance = range * texel.r;
+  float att = distance * distance * (4 / (range * range));
+
+  if (type == 1)
+    gl_FragColor = vec4(0.25, 0.25, 0.25, 1);
+  else if (type == 2) {
+    if (texel.a <= 0.0001)
+       discard;
+
+    gl_FragColor = vec4(0.25 * texel.g, 0.25 * texel.g, 0.25 * texel.g, 1 / att);
+  } else
+    gl_FragColor = vec4(1, 1, 1, 1);
+}
+]]>
+        </code>
+      </fragmentShader>
+
+      <uniform name="texSampler" semantic="Texture0" />
+      <uniform name="worldViewProjection" semantic="WorldViewProjection" />
+    </shader>
+
+    <textureSampler texture="materials/light_debug.tga" />
+
+    <blend>true</blend>
+    <blendFunc src="srcAlpha" dest="one" />
+    <cullFace>false</cullFace>
+    <depthTest>false</depthTest>
+    <depthWrite>false</depthWrite>
+  </pass>
+
+</material>
