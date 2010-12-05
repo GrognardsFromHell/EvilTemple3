@@ -9,10 +9,11 @@ CONFIG += staticlib create_prl
 
 include(../common/project.pri)
 
-SOURCES +=  \
+SOURCES +=  src/qobjectmonowrapper.cpp
 
 HEADERS +=  src/qtmono_stable.h \
-            src/qmonoargumentconverter.h
+            src/qmonoargumentconverter.h \
+			src/qobjectmonowrapper.h
 
 PRECOMPILED_HEADER = src/qtmono_stable.h
 

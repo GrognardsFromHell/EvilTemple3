@@ -4,7 +4,7 @@
 #
 
 INCLUDEPATH += $$PWD/include/
-LIBS += -lQtMono
+LIBS += -lqtmono
 
 CONFIG(debug, debug|release) {
     LIBS += -L$$PWD/../out/debug/bin/

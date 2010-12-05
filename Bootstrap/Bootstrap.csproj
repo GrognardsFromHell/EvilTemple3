@@ -55,7 +55,6 @@
   <ItemGroup>
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="GameWindow.cs" />
-    <Compile Include="IdiotClass.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QObjectWrapper.cs" />
   </ItemGroup>
