@@ -204,7 +204,6 @@ static bool __stdcall invokeMember(QPointer<QObject> *handle,
                     qDebug("class");
                     cl = mono::mono_type_get_class(type);
                     while (cl) {
-                        mono_get_delegate_invoke(
                         qDebug("Classname: %s", mono::mono_class_get_name(cl));
                         cl = mono_class_get_parent(cl);
                     }

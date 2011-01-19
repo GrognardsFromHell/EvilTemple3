@@ -61,8 +61,7 @@ static bool __stdcall QObjectWrapper_InvokeMember(QPointer<QObject> *handle, mon
 {
     bool success = false;
     char *nameUtf8 = mono::mono_string_to_utf8(name);
-    
-    QString calledMethod = QString::fromUtf8(nameUtf8);
+	int nameUtf8Length = strlen(nameUtf8);
 
     QObject *obj = handle->data();
 
@@ -73,22 +72,52 @@ static bool __stdcall QObjectWrapper_InvokeMember(QPointer<QObject> *handle, mon
 
         for (int i = 0; i < metaObj->methodCount(); ++i) {
             QMetaMethod method = metaObj->method(i);
+
+			const char *startOfParamList = strchr(method.signature(), '(');
+			if (!startOfParamList) {
+				qWarning("Cannot find parameter list in method signature: %s", method.signature());
+				continue;
+			}
+
+			int nameLength = startOfParamList - method.signature();
+
+			if (nameUtf8Length != nameLength)
+				continue;
+
+			if (memcmp(method.signature(), nameUtf8, nameLength))
+				continue;
             
-            // TODO: Build method signature for given type / search for compatible signature
-            QString methodSig(method.signature());
-            if (methodSig == calledMethod + "()") {
+            if (method.methodType() == QMetaMethod::Signal) {
+				int argCount = mono_array_length(args);
 
-                if (method.methodType() == QMetaMethod::Signal) {
+				if (argCount != 1) {
+					qWarning("Subscribing to signal %s failed, since not exactly one argument was given. %d arguments were given instead.", method.signature(), argCount);
+					continue;
+				}
 
-                    qDebug("Subscribing to signal. Expecting a single delegate with the correct signature as an argument.");
-                    return true;
-                }
+				// Get the one argument to this call
+				mono::MonoObject *argObj = mono_array_get(args, mono::MonoObject*, 0);
 
-                method.invoke(obj);
+				// TODO Check that it's really a delegate
+				// TODO Check that it has the right signature.
+
+				mono::MonoDelegate *delegate = (mono::MonoDelegate*)argObj;
+
+                qDebug("Subscribing to signal. Expecting a single delegate with the correct signature as an argument: %s.", method.signature());
+				
+				if (!connectionManager->addSignalHandler(obj, i, delegate, Qt::DirectConnection)) {
+					continue;
+				}
 
                 success = true;
-                break;
-            }
+				break;
+			} else if (method.methodType() == QMetaMethod::Slot) {
+				method.invoke(obj);
+				success = true;
+				break;
+			}
+                
+            break;
         }
     }
 

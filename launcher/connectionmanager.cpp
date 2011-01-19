@@ -71,29 +71,43 @@ T *copyValueArg(void *arg, qint64 *valueArgs, int &valueArgsCount) {
     return valueArg;
 }
 
+bool QtMonoConnectionManager::addSignalHandler(QObject *sender, int signalIndex, mono::MonoDelegate *receiver, Qt::ConnectionType type)
+{
+	QtMonoConnection newConnection;
+	newConnection.delegate = receiver;
+	newConnection.signalIndex = signalIndex;
+
+	int slotIndex = ++mSlotCounter;
+
+	Q_ASSERT(!mConnections.contains(slotIndex));
+
+	mConnections.insert(slotIndex, newConnection);
+
+	slotIndex += this->metaObject()->methodOffset();
+
+	return sender->metaObject()->connect(sender, signalIndex, this, slotIndex);
+}
+
 void QtMonoConnectionManager::execute(int slotIndex, void **argv)
 {
     int signalIndex = -1;
 
     mono::MonoDelegate *delegate = NULL;
     
-    for (int i = 0; i < mConnections.size(); ++i) {
+	Connections::const_iterator it = mConnections.find(slotIndex);
+	
+	Q_ASSERT(it != mConnections.end());
 
-        const QVector<QtMonoConnection> &cs = mConnections.at(i);
-        for (int j = 0; j < cs.size(); ++j) {
-            const QtMonoConnection &c = cs.at(j);
-            
-            if (c.slotIndex == slotIndex) {
-                delegate = c.delegate;
-                signalIndex = i;
-                break;
-            }
-        }
-    }
+	delegate = it->delegate;
+	signalIndex = it->signalIndex;
+
     Q_ASSERT(delegate);
+	Q_ASSERT(signalIndex != -1);
 
     const QMetaObject *meta = sender()->metaObject();
     const QMetaMethod method = meta->method(signalIndex);
+	
+	qDebug("EXEC, ID: %d, DELEGATE: %x, SIGNAL: %s", slotIndex, delegate, method.signature());
 
     QList<QByteArray> parameterTypes = method.parameterTypes();
     int argc = parameterTypes.count();
@@ -190,6 +204,13 @@ void QtMonoConnectionManager::execute(int slotIndex, void **argv)
 
         argumentPointers[i] = actualArg;
     }
+
+	mono::MonoObject *exc = NULL;
+	mono::mono_runtime_delegate_invoke(reinterpret_cast<mono::MonoObject*>(delegate), argumentPointers, &exc);
+
+	if (exc) {
+		qWarning("Exception thrown when invoking Mono signal Handler.");
+	}
 
     /*
     for (int i = 0; i < argc; ++i) {

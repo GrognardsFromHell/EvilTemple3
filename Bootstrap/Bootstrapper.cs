@@ -23,10 +23,18 @@ namespace Bootstrap
             window.DrawFrameEvent += b.DrawFrame;
             return 0;
         }
+
+
+        private static bool _inited = false;
         
         private void DrawFrame(dynamic obj)
         {
-            obj.newGameClicked((Action) (() => Console.WriteLine("asd")));
+            if (!_inited)
+            {
+                Console.WriteLine("Registering Event on obj: " + obj);
+                obj.newGameClicked((Action)(() => Console.WriteLine("asd")));
+                _inited = true;
+            }
         }
 
     }

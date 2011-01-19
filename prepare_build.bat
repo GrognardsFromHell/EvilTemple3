@@ -21,6 +21,10 @@ cd engine
 qmake -spec win32-msvc2010 -tp vc
 cd ..
 
+cd qtmono
+qmake -spec win32-msvc2010 -tp vc
+cd ..
+
 rem TODO: Setup the project dependencies in the project files (patch program needed)
 
 mklink /J out\release\data data
