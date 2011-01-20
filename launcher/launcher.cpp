@@ -7,7 +7,7 @@
 #include "qtmono.h"
 
 #include "mainwindow.h"
-#include "connectionmanager.h"
+#include <QtMono/QtMonoConnectionManager>
 
 #include "datafileengine.h"
 
@@ -100,12 +100,10 @@ static bool __stdcall QObjectWrapper_InvokeMember(QPointer<QObject> *handle, mon
 
 				// TODO Check that it's really a delegate
 				// TODO Check that it has the right signature.
-
-				mono::MonoDelegate *delegate = (mono::MonoDelegate*)argObj;
-
+                
                 qDebug("Subscribing to signal. Expecting a single delegate with the correct signature as an argument: %s.", method.signature());
 				
-				if (!connectionManager->addSignalHandler(obj, i, delegate, Qt::DirectConnection)) {
+				if (!connectionManager->addSignalHandler(obj, i, argObj, Qt::DirectConnection)) {
 					continue;
 				}
 
@@ -142,8 +140,6 @@ int main(int argc, char* argv[])
 {
     QApplication a(argc, argv);
 
-    connectionManager = new QtMonoConnectionManager();
-
     EvilTemple::Paths paths;
     
     DataFileEngineHandler dataFileEngine(paths.installationDir().absoluteFilePath("data"));
@@ -158,6 +154,8 @@ int main(int argc, char* argv[])
     mainWindow = new MainWindow;
 
     MonoDomain domain("yada", MonoDomain::DotNet4);
+
+    connectionManager = new QtMonoConnectionManager(domain);
 
     MonoAssembly assembly = domain.openAssembly(qPrintable(filename));
 
