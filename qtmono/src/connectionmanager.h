@@ -2,18 +2,27 @@
 #if !defined(LAUNCHER_CONNECTIONMANAGER_H)
 #define LAUNCHER_CONNECTIONMANAGER_H
 
-#include <QtCore/QHash>
+#include <QObject>
+#include <QString>
+#include <QVector>
+#include <QMetaObject>
+#include <QMetaMethod>
+
+namespace mono {
+#include <mono/metadata/object.h>
+#include <mono/jit/jit.h>
+}
 
 struct QtMonoConnection
 {
     int signalIndex;
-    mono::MonoDelegate *delegate;
+    mono::MonoObject *delegate;
     // TODO: Pin the object or hold a GC handle to it
 };
 
 class QtMonoConnectionManager : public QObject {
 public:
-    QtMonoConnectionManager();
+    QtMonoConnectionManager(mono::MonoDomain *domain);
     ~QtMonoConnectionManager();
 
     static const QMetaObject staticMetaObject;
@@ -24,14 +33,16 @@ public:
     void execute(int slotIndex, void **argv);
 
     bool addSignalHandler(QObject *sender, int signalIndex,
-        mono::MonoDelegate *receiver, Qt::ConnectionType type);
+        mono::MonoObject *receiver, Qt::ConnectionType type);
 
     bool removeSignalHandler(QObject *sender, int signalIndex,
-        mono::MonoDelegate *receiver);
+        mono::MonoObject *receiver);
 
 private:
+    mono::MonoDomain *mDomain;
+
     int mSlotCounter; // Will wrap after roughly 2 billion connections
-	typedef QHash<int, QtMonoConnection> Connections;
+    typedef QHash<int, QtMonoConnection> Connections;
     Connections mConnections;
 };
 

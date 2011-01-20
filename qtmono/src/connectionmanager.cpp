@@ -1,7 +1,7 @@
 
 #include "connectionmanager.h"
 
-static const uint qt_meta_data_QObjectConnectionManager[] = {
+static const uint qt_meta_data_QtObjectConnectionManager[] = {
 
     // content:
     1,       // revision
@@ -23,7 +23,7 @@ static const char qt_meta_stringdata_QtMonoConnectionManager[] = {
 
 const QMetaObject QtMonoConnectionManager::staticMetaObject = {
     { &QObject::staticMetaObject, qt_meta_stringdata_QtMonoConnectionManager,
-    qt_meta_data_QObjectConnectionManager, 0 }
+    qt_meta_data_QtObjectConnectionManager, 0 }
 };
 
 const QMetaObject *QtMonoConnectionManager::metaObject() const
@@ -31,14 +31,31 @@ const QMetaObject *QtMonoConnectionManager::metaObject() const
     return &staticMetaObject;
 }
 
-
-QtMonoConnectionManager::QtMonoConnectionManager()
-    : mSlotCounter(0)
+QtMonoConnectionManager::QtMonoConnectionManager(mono::MonoDomain *domain)
+    : mSlotCounter(0), mDomain(domain)
 {
 }
 
 QtMonoConnectionManager::~QtMonoConnectionManager()
 {
+}
+
+bool QtMonoConnectionManager::addSignalHandler(QObject *sender, int signalIndex, mono::MonoObject *receiver, 
+    Qt::ConnectionType type)
+{
+    QtMonoConnection newConnection;
+    newConnection.delegate = receiver;
+    newConnection.signalIndex = signalIndex;
+
+    int slotIndex = ++mSlotCounter;
+
+    Q_ASSERT(!mConnections.contains(slotIndex));
+
+    mConnections.insert(slotIndex, newConnection);
+
+    slotIndex += this->metaObject()->methodOffset();
+
+    return sender->metaObject()->connect(sender, signalIndex, this, slotIndex);
 }
 
 void *QtMonoConnectionManager::qt_metacast(const char *_clname)
@@ -71,45 +88,28 @@ T *copyValueArg(void *arg, qint64 *valueArgs, int &valueArgsCount) {
     return valueArg;
 }
 
-bool QtMonoConnectionManager::addSignalHandler(QObject *sender, int signalIndex, mono::MonoDelegate *receiver, Qt::ConnectionType type)
-{
-	QtMonoConnection newConnection;
-	newConnection.delegate = receiver;
-	newConnection.signalIndex = signalIndex;
-
-	int slotIndex = ++mSlotCounter;
-
-	Q_ASSERT(!mConnections.contains(slotIndex));
-
-	mConnections.insert(slotIndex, newConnection);
-
-	slotIndex += this->metaObject()->methodOffset();
-
-	return sender->metaObject()->connect(sender, signalIndex, this, slotIndex);
-}
-
 void QtMonoConnectionManager::execute(int slotIndex, void **argv)
 {
     int signalIndex = -1;
 
-    mono::MonoDelegate *delegate = NULL;
-    
-	Connections::const_iterator it = mConnections.find(slotIndex);
-	
-	Q_ASSERT(it != mConnections.end());
+    mono::MonoObject *delegate = NULL;
 
-	delegate = it->delegate;
-	signalIndex = it->signalIndex;
+    Connections::const_iterator it = mConnections.find(slotIndex);
+
+    Q_ASSERT(it != mConnections.end());
+
+    delegate = it->delegate;
+    signalIndex = it->signalIndex;
 
     Q_ASSERT(delegate);
-	Q_ASSERT(signalIndex != -1);
+    Q_ASSERT(signalIndex != -1);
 
-    const QMetaObject *meta = sender()->metaObject();
-    const QMetaMethod method = meta->method(signalIndex);
-	
-	qDebug("EXEC, ID: %d, DELEGATE: %x, SIGNAL: %s", slotIndex, delegate, method.signature());
+    auto meta = sender()->metaObject();
+    auto method = meta->method(signalIndex);
 
-    QList<QByteArray> parameterTypes = method.parameterTypes();
+    qDebug("EXEC, ID: %d, DELEGATE: %x, SIGNAL: %s", slotIndex, delegate, method.signature());
+
+    auto parameterTypes = method.parameterTypes();
     int argc = parameterTypes.count();
 
     if (argc > 10) {
@@ -187,7 +187,7 @@ void QtMonoConnectionManager::execute(int slotIndex, void **argv)
         case QMetaType::QString:
             {
             auto qstr = reinterpret_cast<QString*>(arg);
-            mono::MonoString *str = mono::mono_string_new_utf16(mono::mono_domain_get(), qstr->utf16(), qstr->length());
+            auto str = mono::mono_string_new_utf16(mono::mono_domain_get(), qstr->utf16(), qstr->length());
             stringArguments[stringArgsCount++] = str;
             actualArg = str;
             }
@@ -205,12 +205,12 @@ void QtMonoConnectionManager::execute(int slotIndex, void **argv)
         argumentPointers[i] = actualArg;
     }
 
-	mono::MonoObject *exc = NULL;
-	mono::mono_runtime_delegate_invoke(reinterpret_cast<mono::MonoObject*>(delegate), argumentPointers, &exc);
+    mono::MonoObject *exc = NULL;
+    mono::mono_runtime_delegate_invoke(delegate, argumentPointers, &exc);
 
-	if (exc) {
-		qWarning("Exception thrown when invoking Mono signal Handler.");
-	}
+    if (exc) {
+        qWarning("Exception thrown when invoking Mono signal Handler.");
+    }
 
     /*
     for (int i = 0; i < argc; ++i) {
