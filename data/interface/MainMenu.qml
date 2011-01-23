@@ -10,7 +10,7 @@ Rectangle {
     width: 800
     height: 600
 
-    signal newGameClicked
+    signal newGameClicked(string s, int parm2)
     signal loadGameClicked
 
     // Immediately switch to shown state to trigger fade-in transition defined below
@@ -47,7 +47,7 @@ Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: 'New Game'
                 onClicked: {
-                    newGameClicked();
+                    newGameClicked('string passed in', 1234);
                 }
             }
 

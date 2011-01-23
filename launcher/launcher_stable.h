@@ -9,6 +9,6 @@
 #include <QtGui>
 #include <QtOpenGL>
 
-#include "monopp.h"
+#include <QtMono/QMonoConnectionManager>
 
 #endif // LAUNCHER_STABLE_H

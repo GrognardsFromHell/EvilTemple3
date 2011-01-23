@@ -310,11 +310,11 @@ typedef struct {
 } MonoCustomMod;
 
 struct _MonoArrayType {
-	MonoClass *eklass;
-	uint8_t rank;
-	uint8_t numsizes;
-	uint8_t numlobounds;
-	int *sizes;
+    MonoClass *eklass;
+    uint8_t rank;
+    uint8_t numsizes;
+    uint8_t numlobounds;
+    int *sizes;
 	int *lobounds;
 };
 

@@ -24,15 +24,16 @@ namespace Bootstrap
             return 0;
         }
 
-
         private static bool _inited = false;
-        
+
+        private delegate void NewGameClicked(string f, int otherArg);
+
         private void DrawFrame(dynamic obj)
         {
             if (!_inited)
             {
                 Console.WriteLine("Registering Event on obj: " + obj);
-                obj.newGameClicked((Action)(() => Console.WriteLine("asd")));
+                obj.newGameClicked((NewGameClicked)((x, y) => Console.WriteLine("asd: " + x + " y: " + y)));
                 _inited = true;
             }
         }

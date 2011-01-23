@@ -1,5 +1,10 @@
 
-#include "connectionmanager.h"
+#include "qmonoargumentconverter.h"
+
+#include "monopp.h"
+
+#include "qmonoconnectionmanager.h"
+
 
 static const uint qt_meta_data_QtObjectConnectionManager[] = {
 
@@ -17,36 +22,74 @@ static const uint qt_meta_data_QtObjectConnectionManager[] = {
     0        // eod
 };
 
-static const char qt_meta_stringdata_QtMonoConnectionManager[] = {
-    "QtMonoConnectionManager\0\0execute()\0"
+static const char qt_meta_stringdata_QMonoConnectionManager[] = {
+    "QMonoConnectionManager\0\0execute()\0"
 };
 
-const QMetaObject QtMonoConnectionManager::staticMetaObject = {
-    { &QObject::staticMetaObject, qt_meta_stringdata_QtMonoConnectionManager,
+const QMetaObject QMonoConnectionManager::staticMetaObject = {
+    { &QObject::staticMetaObject, qt_meta_stringdata_QMonoConnectionManager,
     qt_meta_data_QtObjectConnectionManager, 0 }
 };
 
-const QMetaObject *QtMonoConnectionManager::metaObject() const
+const QMetaObject *QMonoConnectionManager::metaObject() const
 {
     return &staticMetaObject;
 }
 
-QtMonoConnectionManager::QtMonoConnectionManager(mono::MonoDomain *domain)
+QMonoConnectionManager::QMonoConnectionManager(mono::MonoDomain *domain)
     : mSlotCounter(0), mDomain(domain)
 {
 }
 
-QtMonoConnectionManager::~QtMonoConnectionManager()
+QMonoConnectionManager::~QMonoConnectionManager()
 {
 }
 
-bool QtMonoConnectionManager::addSignalHandler(QObject *sender, int signalIndex, mono::MonoObject *receiver, 
-    Qt::ConnectionType type)
+bool QMonoConnectionManager::addSignalHandler(QObject *sender, int signalIndex, mono::MonoObject *receiver, 
+    Qt::ConnectionType connectionType)
 {
     QtMonoConnection newConnection;
     newConnection.delegate = receiver;
     newConnection.signalIndex = signalIndex;
 
+    mono::MonoClass *handlerClass = mono::mono_object_get_class(receiver);
+    monopp::MonoMethod handlerMethod = mono::mono_get_delegate_invoke(handlerClass);
+
+    // Parse signature and compare with slot
+    monopp::MonoMethodSignature handlerSignature = handlerMethod.signature();
+    
+    auto signalMethod = sender->metaObject()->method(signalIndex);
+    auto signalParamCount = signalMethod.parameterTypes().count();
+
+    /*
+    It's possible to "omit" some of the signal's parameters. But the signal handler musn't have more parameters
+    than the signal.
+     */
+    if (handlerSignature.parameterCount() > signalParamCount) {
+        qWarning("Cannot connect a mono method with %d parameters to a signal with %d.", 
+            handlerSignature.parameterCount(), 
+            signalParamCount);
+        return false;
+    }
+
+    qDebug("Signal signature: %s", signalMethod.signature());
+
+    QVector<mono::MonoType*> handlerParameterTypes = handlerSignature.parameterTypes();
+    
+    for (int i = 0; i < handlerParameterTypes.size(); ++i) {
+        // MonoType must conform to the signal's parameter type.
+        auto signalTypeName = signalMethod.parameterTypes().at(i);
+        auto signalType = QMetaType::type(signalTypeName);
+        monopp::MonoType handlerType = handlerParameterTypes[i];
+
+        if (!QMonoArgumentConverter::isAssignableFrom(handlerType, signalType)) {
+            qWarning("Cannot attach receiver to signal %s, because parameter types @ position %i are not compatible: "
+                "%s cannot be assigned to type %s", signalMethod.signature(), i, signalTypeName.constData(),
+                handlerType.name());
+            return false;
+        }
+    }
+    
     int slotIndex = ++mSlotCounter;
 
     Q_ASSERT(!mConnections.contains(slotIndex));
@@ -58,15 +101,15 @@ bool QtMonoConnectionManager::addSignalHandler(QObject *sender, int signalIndex,
     return sender->metaObject()->connect(sender, signalIndex, this, slotIndex);
 }
 
-void *QtMonoConnectionManager::qt_metacast(const char *_clname)
+void *QMonoConnectionManager::qt_metacast(const char *_clname)
 {
     if (!_clname) return 0;
-    if (!strcmp(_clname, qt_meta_stringdata_QtMonoConnectionManager))
-        return static_cast<void*>(const_cast<QtMonoConnectionManager*>(this));
+    if (!strcmp(_clname, qt_meta_stringdata_QMonoConnectionManager))
+        return static_cast<void*>(const_cast<QMonoConnectionManager*>(this));
     return QObject::qt_metacast(_clname);
 }
 
-int QtMonoConnectionManager::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+int QMonoConnectionManager::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 {
     _id = QObject::qt_metacall(_c, _id, _a);
     if (_id < 0)
@@ -78,17 +121,7 @@ int QtMonoConnectionManager::qt_metacall(QMetaObject::Call _c, int _id, void **_
     return _id;
 }
 
-// Convert to C++ types.
-template<typename T>
-T *copyValueArg(void *arg, qint64 *valueArgs, int &valueArgsCount) {
-    static_assert(sizeof(T) <= sizeof(qint64), 
-        "The type you are trying to convert doesn't fit into the value argument array.");
-    T *valueArg = reinterpret_cast<T*>(valueArgs + valueArgsCount++);
-    *valueArg = *reinterpret_cast<T*>(arg);
-    return valueArg;
-}
-
-void QtMonoConnectionManager::execute(int slotIndex, void **argv)
+void QMonoConnectionManager::execute(int slotIndex, void **argv)
 {
     int signalIndex = -1;
 
@@ -112,101 +145,18 @@ void QtMonoConnectionManager::execute(int slotIndex, void **argv)
     auto parameterTypes = method.parameterTypes();
     int argc = parameterTypes.count();
 
-    if (argc > 10) {
-        qWarning("Can only handle signals with 10 or fewer arguments.");
-        // TODO: Check this upon connecting to the signal
-        return;
-    }
-
-    static_assert(sizeof(double) <= sizeof(qint64), "The size of the largest floating point type must be smaller than or equal to 64-bit.");
-    qint64 valueArguments[10];
-    int valueArgsCount = 0;
-    void *argumentPointers[10]; // The actual argument pointers
-    mono::MonoString *stringArguments[10];
-    int stringArgsCount = 0;
-
+    QMonoArgumentConverter argConverter(argc, mDomain);
+        
     for (int i = 0; i < argc; ++i) {
         void *arg = argv[i + 1];
 
-        QByteArray typeName = parameterTypes.at(i);
-        int argType = QMetaType::type(parameterTypes.at(i));
+        const auto &argType = parameterTypes.at(i);
 
-        /*Void = 0, Bool = 1, Int = 2, UInt = 3, LongLong = 4, ULongLong = 5,
-            Double = 6, QChar = 7, QVariantMap = 8, QVariantList = 9,
-            QString = 10, QStringList = 11, QByteArray = 12,
-            QBitArray = 13, QDate = 14, QTime = 15, QDateTime = 16, QUrl = 17,
-            QLocale = 18, QRect = 19, QRectF = 20, QSize = 21, QSizeF = 22,
-            QLine = 23, QLineF = 24, QPoint = 25, QPointF = 26, QRegExp = 27,
-            QVariantHash = 28, QEasingCurve = 29, LastCoreType = QEasingCurve,*/
-
-        void *actualArg = NULL;
-
-        switch (argType) {
-        case QMetaType::Bool:
-            actualArg = copyValueArg<bool>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::UChar:
-            actualArg = copyValueArg<uchar>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::Char:
-            actualArg = copyValueArg<char>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::UShort:
-            actualArg = copyValueArg<ushort>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::Short:
-            actualArg = copyValueArg<short>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::Int:
-            actualArg = copyValueArg<int>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::UInt:
-            actualArg = copyValueArg<uint>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::ULongLong:
-            actualArg = copyValueArg<quint64>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::LongLong:
-            actualArg = copyValueArg<qint64>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::Float:
-            actualArg = copyValueArg<float>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::Double:
-            actualArg = copyValueArg<double>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::QChar:
-            actualArg = copyValueArg<QChar>(arg, valueArguments, valueArgsCount);
-            break;
-        case QMetaType::QVariantMap:
-            // Convert to Dict<string,object>
-            break;
-        case QMetaType::QVariantList:
-            // Convert to array of object
-            break;
-        case QMetaType::QString:
-            {
-            auto qstr = reinterpret_cast<QString*>(arg);
-            auto str = mono::mono_string_new_utf16(mono::mono_domain_get(), qstr->utf16(), qstr->length());
-            stringArguments[stringArgsCount++] = str;
-            actualArg = str;
-            }
-            break;
-        case 0:
-        default:
-            qWarning("QScriptEngine: Unable to handle unregistered datatype '%s' "
-                "when invoking handler of signal %s::%s",
-                typeName.constData(), meta->className(), method.signature());
-            // TODO: Clean up and return. No signals should be triggered for which parameters are unknown.
-            // TODO: Couldn't this be performed when connecting to the signal? Signals won't actually change during runtime, would they?
-            return; // TODO: ENSURE that previously allocated arguments are cleaned up
-        }
-
-        argumentPointers[i] = actualArg;
+        argConverter.add(arg, argType);
     }
 
     mono::MonoObject *exc = NULL;
-    mono::mono_runtime_delegate_invoke(delegate, argumentPointers, &exc);
+    mono::mono_runtime_delegate_invoke(delegate, argConverter.args(), &exc);
 
     if (exc) {
         qWarning("Exception thrown when invoking Mono signal Handler.");

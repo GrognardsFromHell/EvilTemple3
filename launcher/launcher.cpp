@@ -3,11 +3,10 @@
 
 #include "launcher_stable.h"
 
-#include "monopp.h"
-#include "qtmono.h"
-
 #include "mainwindow.h"
-#include <QtMono/QtMonoConnectionManager>
+
+#include <QtMono/QtMono>
+#include <QtMono/QMonoConnectionManager>
 
 #include "datafileengine.h"
 
@@ -18,11 +17,11 @@
 #include <QElapsedTimer>
 #include <QGLWidget>
 
-using namespace monopp;
-
 MainWindow *mainWindow;
 
-static QtMonoConnectionManager *connectionManager = NULL;
+using namespace monopp;
+
+static QMonoConnectionManager *connectionManager = NULL;
 
 inline QString fromMonoString(mono::MonoString *str) {
     mono::mono_unichar2 *rawStr = mono_string_chars(str);
@@ -155,7 +154,7 @@ int main(int argc, char* argv[])
 
     MonoDomain domain("yada", MonoDomain::DotNet4);
 
-    connectionManager = new QtMonoConnectionManager(domain);
+    connectionManager = new QMonoConnectionManager(domain);
 
     MonoAssembly assembly = domain.openAssembly(qPrintable(filename));
 
@@ -198,23 +197,7 @@ int main(int argc, char* argv[])
     EvilTemple::GameView gameView;    
     gameView.setViewport(mainWindow);
     QObject *obj = gameView.addGuiItem("interface/MainMenu.qml");
-    
-    if (obj) {
-        const QMetaObject *mobj = obj->metaObject();
-
-        // DUMP PROPERTIES
-        for (int i = 0; i < mobj->propertyCount(); ++i) {
-            QMetaProperty prop = mobj->property(i);
-            qDebug("PROPERTY %d: %s (Type: %s)", i, prop.name(), prop.typeName());
-        }
-
-        // DUMP METHODS
-        for (int i = 0; i < mobj->methodCount(); ++i) {
-            QMetaMethod method = mobj->method(i);
-            qDebug("METHOD %d: %s", i, method.signature());
-        }
-    }
-    
+        
     mono::MonoObject *mainMenuWrapper = createQObjectWrapper(image, obj);
 
     gameView.show();

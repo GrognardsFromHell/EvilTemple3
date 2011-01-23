@@ -2,6 +2,7 @@
 #ifndef MONOPP_H
 #define MONOPP_H
 
+#include <assert.h>
 
 namespace mono {
 #include <mono/jit/jit.h>
@@ -9,6 +10,8 @@ namespace mono {
 #include <mono/metadata/debug-helpers.h>
 #include <mono/metadata/mono-config.h>
 }
+
+#include <QVector>
 
 namespace monopp {
 
@@ -225,6 +228,10 @@ public:
         return result;
     }
 
+    mono::MonoMethodSignature *signature() const {
+        return mono::mono_method_signature(mMethod);
+    }
+
 private:
 
     mono::MonoMethod *mMethod;
@@ -258,6 +265,41 @@ private:
     MonoMethodDesc(MonoMethodDesc&);
 
     mono::MonoMethodDesc *mMethodDesc;
+};
+
+class MonoMethodSignature {
+public:
+
+    MonoMethodSignature(mono::MonoMethodSignature *signature) : mSignature(signature) {}
+    MonoMethodSignature(const MonoMethodSignature &signature) : mSignature(signature.mSignature) {}
+
+    bool isValid() const {
+        return mSignature != NULL;
+    }
+
+    operator mono::MonoMethodSignature *() {
+        return mSignature;
+    }
+
+    int parameterCount() const {
+        return mono::mono_signature_get_param_count(mSignature);
+    }
+
+    QVector<mono::MonoType*> parameterTypes() const {
+        int paramCount = parameterCount();
+        QVector<mono::MonoType*> result;
+        result.reserve(paramCount);
+
+        void *iter = NULL;
+        while (auto handlerType = mono::mono_signature_get_params(mSignature, &iter)) {
+            result.append(handlerType);
+        }
+
+        return result;
+    }
+
+private:
+    mono::MonoMethodSignature *mSignature;
 };
 
 /**
@@ -306,6 +348,40 @@ private:
     T mFunction;
 };
 
+/**
+    Wraps mono::MonoType*
+  */
+class MonoType {
+public:
+    MonoType(mono::MonoType *type) : mType(type) {}
+
+    MonoType(const MonoType &type) : mType(type.mType) {}
+
+    bool isValid() const {
+        return mType != NULL;
+    }
+
+    operator mono::MonoType *() {
+        return mType;
+    }
+
+    const char *name() const {
+        return mono::mono_type_get_name(mType);
+    }
+
+    mono::MonoTypeEnum internalType() const {
+        return (mono::MonoTypeEnum)mono::mono_type_get_type(mType);
+    }
+
+    mono::MonoArrayType *arrayElementType() {
+        assert(internalType() == mono::MONO_TYPE_ARRAY);
+        return mono::mono_type_get_array_type(mType);
+    }
+
+private:
+    mono::MonoType *mType;
+};
+
 inline mono::MonoMethod *MonoImage::findMethod(MonoMethodDesc &methodDesc)
 {
     return mono::mono_method_desc_search_in_image(methodDesc, mImage);
@@ -319,6 +395,53 @@ inline mono::MonoMethod *MonoClass::findMethod(mono::MonoMethodDesc *methodDesc)
 inline mono::MonoMethod *MonoClass::findMethod(const char *name, int paramCount)
 {
     return mono::mono_class_get_method_from_name(mClass, name, paramCount);
+}
+
+template<typename T>
+inline T monoUnbox(mono::MonoObject* obj)
+{
+    return *reinterpret_cast<T*>(mono::mono_object_unbox(obj));
+}
+
+template<typename T>
+inline T fromMono(mono::MonoObject*) {
+    static_assert(false, "No specializations is available for this type.");
+}
+
+// Unwraps an integer
+template<>
+inline int fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_int32_class());
+
+    return monoUnbox<int>(obj);
+}
+
+// Unwraps a 32-bit unsigned integer
+template<>
+inline uint fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_uint32_class());
+
+    return monoUnbox<uint>(obj);
+}
+
+// Unwraps a single
+template<>
+inline float fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_single_class());
+
+    return monoUnbox<float>(obj);
+}
+
+// Unwraps a double
+template<>
+inline double fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_double_class());
+
+    return monoUnbox<double>(obj);
 }
 
 }

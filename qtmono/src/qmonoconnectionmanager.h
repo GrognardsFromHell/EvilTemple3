@@ -1,6 +1,6 @@
 
-#if !defined(LAUNCHER_CONNECTIONMANAGER_H)
-#define LAUNCHER_CONNECTIONMANAGER_H
+#if !defined(QTMONO_CONNECTIONMANAGER_H)
+#define QTMONO_CONNECTIONMANAGER_H
 
 #include <QObject>
 #include <QString>
@@ -8,10 +8,7 @@
 #include <QMetaObject>
 #include <QMetaMethod>
 
-namespace mono {
-#include <mono/metadata/object.h>
-#include <mono/jit/jit.h>
-}
+#include "monopp.h"
 
 struct QtMonoConnection
 {
@@ -20,10 +17,10 @@ struct QtMonoConnection
     // TODO: Pin the object or hold a GC handle to it
 };
 
-class QtMonoConnectionManager : public QObject {
+class QMonoConnectionManager : public QObject {
 public:
-    QtMonoConnectionManager(mono::MonoDomain *domain);
-    ~QtMonoConnectionManager();
+    QMonoConnectionManager(mono::MonoDomain *domain);
+    ~QMonoConnectionManager();
 
     static const QMetaObject staticMetaObject;
     virtual const QMetaObject *metaObject() const;
@@ -46,4 +43,4 @@ private:
     Connections mConnections;
 };
 
-#endif // LAUNCHER_CONNECTIONMANAGER_H
+#endif // QTMONO_CONNECTIONMANAGER_H
