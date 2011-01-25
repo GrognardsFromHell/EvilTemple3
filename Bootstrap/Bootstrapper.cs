@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using Bootstrap;
 using Runtime;
@@ -40,7 +41,14 @@ namespace Bootstrap
                 obj.newGameClicked += (NewGameClicked) ((x, y) => Console.WriteLine("asd: " + x + " y: " + y));
                 _inited = true;
             }
-            
+
+            List<object> testF = obj.testFunction("yadaadada");
+            Console.WriteLine("Result from function call: " + testF[0] + testF[1]);
+
+            Console.WriteLine("Initial: " + obj.testProp);
+
+            obj.testProp = "New Value";
+
             var color = Color.FromArgb(255, 0, 0, 128);
 
             obj.color = color;

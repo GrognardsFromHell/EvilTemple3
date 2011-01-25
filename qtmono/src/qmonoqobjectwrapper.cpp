@@ -36,9 +36,37 @@ public:
     mono::MonoMethod *managedEventHelperClassCtor;
     mono::MonoMethod *colorCtor;
     mono::MonoClass *colorClass;
+
+    mono::MonoClass *objectDictClass;
+    mono::MonoMethod *objectDictCtor;
+    mono::MonoMethod *objectDictAdd;
+
+    mono::MonoClass *objectListClass;
+    mono::MonoMethod *objectListCtor;
+    mono::MonoMethod *objectListAdd;
+
+    void findGenericClasses(monopp::MonoImage monoImage);
+
     QMonoConnectionManager *connectionManager;
     QString error;        
 };
+
+void QMonoQObjectWrapper::Data::findGenericClasses(monopp::MonoImage monoImage)
+{
+    auto genericHelperClass = monoImage.findClass("Bootstrap", "GenericHelper");
+
+    Q_ASSERT(genericHelperClass);
+
+    auto objectListField = mono::mono_class_get_field_from_name(genericHelperClass, "objectList");
+    objectListClass = mono::mono_class_from_mono_type (mono::mono_field_get_type(objectListField));
+    objectListCtor = mono::mono_class_get_method_from_name(objectListClass, ".ctor", 0);
+    objectListAdd = mono::mono_class_get_method_from_name(objectListClass, "Add", 1);
+
+    auto objectDictField = mono::mono_class_get_field_from_name(genericHelperClass, "objectDict");
+    objectDictClass = mono::mono_class_from_mono_type (mono::mono_field_get_type(objectDictField));
+    objectDictCtor = mono::mono_class_get_method_from_name(objectDictClass, ".ctor", 0);
+    objectDictAdd = mono::mono_class_get_method_from_name(objectDictClass, "Add", 2);
+}
 
 QMonoQObjectWrapper::QMonoQObjectWrapper() : d(new Data)
 {
@@ -57,6 +85,42 @@ bool QMonoQObjectWrapper::isInitialized() const {
     return d->initialized;
 }
 
+/**
+  Retrieve a numeric value from a mono-object. This is used to auto-convert different number-types to a target type.
+  If a 32-bit integer is required, a 16-bit integer can still be used.
+*/
+template<typename T>
+T numberFromMonoObject(mono::MonoObject *object, bool *ok = NULL) {
+    mono::MonoClass *klass = mono::mono_object_get_class(object);
+
+    if (ok)
+        *ok = true;
+
+    if (objectClass == mono::mono_get_int32_class()) {
+        return monopp::fromMono<qint32>(object);
+    } else if (objectClass == mono::mono_get_uint32_class()) {
+        return monopp::fromMono<quint32>(object);
+    } else if (objectClass == mono::mono_get_int16_class()) {
+        return monopp::fromMono<qint16>(object);
+    } else if (objectClass == mono::mono_get_uint16_class()) {
+        return monopp::fromMono<quint16>(object);
+    } else if (objectClass == mono::mono_get_sbyte_class()) {
+        return monopp::fromMono<qint8>(object);
+    } else if (objectClass == mono::mono_get_byte_class()) {
+        return monopp::fromMono<quint8>(object);
+    } else if (objectClass == mono::mono_get_boolean_class()) {
+        return monopp::fromMono<bool>(object);
+    } else if (objectClass == mono::mono_get_double_class()) {
+        return monopp::fromMono<double>(object);
+    } else if (objectClass == mono::mono_get_single_class()) {
+        return monopp::fromMono<float>(object);
+    } else {
+        if (ok)
+            *ok = false;
+        return 0;
+    }
+}
+
 bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono::MonoString *name, mono::MonoArray *args, mono::MonoObject **result)
 {
     bool success = false;
@@ -65,6 +129,8 @@ bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono
 
     QObject *obj = handle->data();
 
+    auto wrapper = getInstance();
+
     if (!obj) {
         qWarning("Invoking %s on NULL Pointer for handle %x", nameUtf8, handle);
     } else {             
@@ -72,6 +138,9 @@ bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono
 
         for (int i = 0; i < metaObj->methodCount(); ++i) {
             QMetaMethod method = metaObj->method(i);
+
+            if (method.parameterTypes().size() != mono::mono_array_length(args))
+                continue;
 
             const char *startOfParamList = strchr(method.signature(), '(');
             if (!startOfParamList) {
@@ -87,8 +156,67 @@ bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono
             if (memcmp(method.signature(), nameUtf8, nameLength))
                 continue;
 
+            if (method.parameterTypes().size() > 10) {
+                qWarning("Methods with more than 10 parameters cannot be called.");
+                continue;
+            }
+
             if (method.methodType() == QMetaMethod::Slot) {
-                method.invoke(obj);
+                
+                if (method.typeName()[0]) {
+                    // Method has a return type
+                    int returnTypeId = QMetaType::type(method.typeName());
+                    void *returnArgValue = QMetaType::construct(returnTypeId);
+
+                    QGenericReturnArgument returnArg(method.typeName(), returnArgValue);
+                    QGenericArgument genericArgs[10];
+                    
+                    for (int i = 0; i < method.parameterTypes().size(); ++i) {
+                        auto monoArg = mono_array_get(args, mono::MonoObject*, i);
+
+                        // Pull all necessary arguments from the given argument list and try to convert them if possible
+                        auto parameterType = method.parameterTypes()[i];
+                        auto parameterTypeId = QMetaType::type(parameterType);
+
+                        void *data = NULL;
+
+                        switch (parameterTypeId) {
+                        case QMetaType::QVariant:
+                            data = new QVariant(wrapper->convertObjectToVariant(monoArg));
+                            break;
+                        // TODO: Add other parameter-types that should be supported here.
+                        }
+                        
+                        if (data) {
+                            genericArgs[i] = QGenericArgument(parameterType, data);
+                        }
+                    }
+
+                    method.invoke(obj, returnArg, genericArgs[0], genericArgs[1], genericArgs[2], genericArgs[3],
+                        genericArgs[4], genericArgs[5], genericArgs[6], genericArgs[7], genericArgs[8], genericArgs[9]);
+
+                    // Clean up the argument array and free previously allocated memory
+                    for (int i = 0; i < method.parameterTypes().size(); ++i) {
+                        if (genericArgs[i].data()) {
+                            QMetaType::destroy(QMetaType::type(genericArgs[i].name()), genericArgs[i].data());
+                        }
+                    }
+
+                    *result = NULL;
+
+                    // Convert the return-type back.
+                    switch (returnTypeId) {
+                    case QMetaType::QVariant:
+                        *result = wrapper->convertVariantToObject(*reinterpret_cast<QVariant*>(returnArgValue));
+                        // TODO: Add other return-types that should be supported here.
+                    }
+
+                    QMetaType::destroy(returnTypeId, returnArgValue);                    
+                } else {
+                    method.invoke(obj);
+                    *result = NULL;
+                }
+                
                 success = true;
                 break;
             }
@@ -126,7 +254,8 @@ mono::MonoObject *QMonoQObjectWrapper::convertVariantToObject(const QVariant &va
     case QVariant::Char:
         return boxValue<QChar>(variant.toChar(), d->monoDomain, mono::mono_get_char_class());
     case QVariant::String:
-        return boxValue<mono::MonoString*>(monopp::toMonoString(variant.toString()), d->monoDomain, mono::mono_get_string_class());
+        // MonoString's are MonoObjects
+        return (mono::MonoObject*)monopp::toMonoString(variant.toString());
     case QVariant::Color:
         {
             if (!d->colorCtor) {
@@ -148,6 +277,21 @@ mono::MonoObject *QMonoQObjectWrapper::convertVariantToObject(const QVariant &va
             }
 
             return result;
+        }
+        break;
+    case QVariant::List:
+        {
+            QList<QVariant> variantList = variant.toList();
+            auto *resultList = mono::mono_object_new(d->monoDomain, d->objectListClass);
+            mono::mono_runtime_invoke(d->objectListCtor, resultList, NULL, NULL);
+
+            foreach (QVariant variantListEl, variantList) {
+                auto resultListEl = convertVariantToObject(variantListEl);
+                void *params[1] = {resultListEl};
+                mono::mono_runtime_invoke(d->objectListAdd, resultList, params, NULL);
+            }
+
+            return resultList;
         }
         break;
     }
@@ -228,6 +372,24 @@ QVariant QMonoQObjectWrapper::convertObjectToVariant(mono::MonoObject *object)
 
     if (objectClass == mono::mono_get_int32_class()) {
         return monopp::fromMono<qint32>(object);
+    } else if (objectClass == mono::mono_get_uint32_class()) {
+        return monopp::fromMono<quint32>(object);
+    } else if (objectClass == mono::mono_get_int16_class()) {
+        return monopp::fromMono<qint16>(object);
+    } else if (objectClass == mono::mono_get_uint16_class()) {
+        return monopp::fromMono<quint16>(object);
+    } else if (objectClass == mono::mono_get_sbyte_class()) {
+        return monopp::fromMono<qint8>(object);
+    } else if (objectClass == mono::mono_get_byte_class()) {
+        return monopp::fromMono<quint8>(object);
+    } else if (objectClass == mono::mono_get_string_class()) {
+        return monopp::fromMonoString((mono::MonoString*)object);
+    } else if (objectClass == mono::mono_get_boolean_class()) {
+        return monopp::fromMono<bool>(object);
+    } else if (objectClass == mono::mono_get_double_class()) {
+        return monopp::fromMono<double>(object);
+    } else if (objectClass == mono::mono_get_single_class()) {
+        return monopp::fromMono<float>(object);
     } else if (objectClass == d->colorClass) {
         
         quint32 argb = *(quint32*)mono::mono_object_unbox(object);
@@ -417,6 +579,8 @@ bool QMonoQObjectWrapper::initialize(QMonoConnectionManager *connectionManager, 
     mono::mono_add_internal_call("Bootstrap.EventSubscriptionHelper::ConnectToSignal", ConnectToSignal);
     mono::mono_add_internal_call("Bootstrap.EventSubscriptionHelper::DisconnectFromSignal", DisconnectFromSignal);
 
+    d->findGenericClasses(image);
+
     d->initialized = true;    
     return true;
 }
@@ -435,7 +599,7 @@ void __stdcall QMonoQObjectWrapper::ConnectToSignal(QPointer<QObject> *handle, m
     const char *nameUtf8 = mono::mono_string_to_utf8(name);
     int nameUtf8Length = mono::mono_string_length(name);
 
-   // Find matching signal
+    // Find matching signal
     const QMetaObject *metaObj = obj->metaObject();
 
     auto wrapper = QMonoQObjectWrapper::getInstance();

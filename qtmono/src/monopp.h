@@ -408,6 +408,14 @@ inline T fromMono(mono::MonoObject*) {
     static_assert(false, "No specializations is available for this type.");
 }
 
+template<>
+inline bool fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_boolean_class());
+
+    return monoUnbox<bool>(obj);
+}
+
 // Unwraps an integer
 template<>
 inline int fromMono(mono::MonoObject *obj) {
@@ -424,6 +432,22 @@ inline uint fromMono(mono::MonoObject *obj) {
     assert(mono::mono_object_get_class(obj) == mono::mono_get_uint32_class());
 
     return monoUnbox<uint>(obj);
+}
+
+template<>
+inline qint16 fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_int16_class());
+
+    return monoUnbox<qint16>(obj);
+}
+
+template<>
+inline quint16 fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_uint16_class());
+
+    return monoUnbox<quint16>(obj);
 }
 
 template<>

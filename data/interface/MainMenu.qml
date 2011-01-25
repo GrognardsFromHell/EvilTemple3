@@ -10,8 +10,14 @@ Rectangle {
     width: 800
     height: 600
 
+	property string testProp : 'initialValue'
+	
     signal newGameClicked(string s, int parm2)
     signal loadGameClicked
+	
+	function testFunction(yada) {
+		return ["TestString" + yada, 'OtherEl'];
+	}
 
     // Immediately switch to shown state to trigger fade-in transition defined below
     Component.onCompleted: {
