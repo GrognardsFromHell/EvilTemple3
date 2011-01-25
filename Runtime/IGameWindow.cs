@@ -45,7 +45,7 @@ namespace Runtime
         /// Indicates that the window is running in full-screen mode, without a border.
         /// </summary>
         bool FullScreen { get; set; }
-
+        
         event DrawFrameHandler DrawFrameEvent;
     }
 

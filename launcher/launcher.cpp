@@ -18,32 +18,7 @@
 #include <QElapsedTimer>
 #include <QGLWidget>
 
-MainWindow *mainWindow;
-
 using namespace monopp;
-
-static void GameWindow_SetWindowTitle(mono::MonoString *str) {
-    mainWindow->setWindowTitle(fromMonoString(str));
-}
-
-static mono::MonoString *GameWindow_GetWindowTitle() {
-    return toMonoString(mainWindow->windowTitle());
-}
-
-static quint32 gcHandle = 0;
-
-static mono::MonoDelegate *delegateObj = NULL;
-
-static void GameWindow_AddDrawFrameEventHandler(mono::MonoDelegate *delegate) {
-    delegateObj = delegate;
-    gcHandle = mono::mono_gchandle_new((mono::MonoObject*)delegate, TRUE);
-}
-
-static void GameWindow_RemoveDrawFrameEventHandler(mono::MonoDelegate *delegate) {
-    qDebug("Removed an event handler to the main window draw routine.");
-}
-
-typedef void (__stdcall *DrawFrameEvent)(mono::MonoDelegate*, mono::MonoObject *mainMenu, mono::MonoObject **);
 
 void loadFonts();
 void loadFont(const QString &filename);
@@ -65,7 +40,7 @@ int main(int argc, char* argv[])
 
     qDebug("Expecting Bootstrap.dll at %s", qPrintable(filename));
 
-    mainWindow = new MainWindow;
+    MainWindow *mainWindow = new MainWindow;
     
     MonoDomain domain("yada", MonoDomain::DotNet4);
             
@@ -75,22 +50,20 @@ int main(int argc, char* argv[])
         qWarning("Unable to load assembly Bootstrap.dll");
         return -1;
     }
-
-    mono::mono_add_internal_call("Bootstrap.GameWindow::GetWindowTitle", GameWindow_GetWindowTitle);
-    mono::mono_add_internal_call("Bootstrap.GameWindow::SetWindowTitle", GameWindow_SetWindowTitle);
-    mono::mono_add_internal_call("Bootstrap.GameWindow::AddDrawFrameEventHandler", GameWindow_AddDrawFrameEventHandler);
-    mono::mono_add_internal_call("Bootstrap.GameWindow::RemoveDrawFrameEventHandler", GameWindow_RemoveDrawFrameEventHandler);
-
-    MonoMethodDesc startMethodDesc("Bootstrap.Bootstrapper:Main(string[])");
+    
+    MonoMethodDesc startMethodDesc("Bootstrap.MainHelper:Main(string[])");
     
     MonoImage image = assembly.image();
     MonoMethod method = image.findMethod(startMethodDesc);
 
-    if (method) {
-        qWarning("Found corresponding Main(string[]) method.\n");
-    }
-    
+    Q_ASSERT(method);
+
     int retval = method.runAsMain(argc, argv);
+
+    if (retval != 0) {
+        qWarning("Main method returned error code: %d", retval);
+        return retval;
+    }
 
     // Initialize QtMono Services
     auto connectionManager = new QMonoConnectionManager(domain);
@@ -102,12 +75,10 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    qDebug("Main() returned %d", retval);
-
     MonoDelegate<DrawFrameEvent> paintDelegate(delegateObj);
 
     DrawFrameEvent drawFrameEvent = paintDelegate.functionPointer();
-    
+
     QGLContext *context = const_cast<QGLContext*>(QGLContext::currentContext());
 
     mainWindow->makeCurrent();
@@ -116,6 +87,8 @@ int main(int argc, char* argv[])
 
     EvilTemple::GameView gameView;    
     gameView.setViewport(mainWindow);
+
+
     QObject *obj = gameView.addGuiItem("interface/MainMenu.qml");
         
     mono::MonoObject *mainMenuWrapper = QMonoQObjectWrapper::getInstance()->create(obj);

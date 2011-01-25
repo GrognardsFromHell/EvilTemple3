@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Drawing;
 using Bootstrap;
+using Bootstrap.Interop;
 using Runtime;
 
 namespace Bootstrap
 {
-
 
     public sealed class Bootstrapper
     {
@@ -18,29 +18,21 @@ namespace Bootstrap
         /// <returns>Always 0.</returns>
         public static int Main(string[] main)
         {
-            Console.WriteLine("Called main method.");
-
-            IGameWindow window = new GameWindow();
-
-            window.WindowTitle = "EvilTemple";
-
-            var b = new Bootstrapper();
-            window.DrawFrameEvent += b.DrawFrame;
             return 0;
         }
 
-        private static bool _inited = false;
-
         private delegate void NewGameClicked(string f, int otherArg);
 
-        private void DrawFrame(dynamic obj)
+        public void ApplicationStartup(dynamic gameWindow)
         {
-            if (!_inited)
-            {
-                Console.WriteLine("Registering Event on obj: " + obj);
-                obj.newGameClicked += (NewGameClicked) ((x, y) => Console.WriteLine("asd: " + x + " y: " + y));
-                _inited = true;
-            }
+            IGameWindow gw = new GameWindow(gameWindow);
+            gw.WindowTitle = "EvilTemple";
+
+            var b = new Bootstrapper();
+            gw.DrawFrameEvent += b.DrawFrame;
+            /*
+            Console.WriteLine("Registering Event on obj: " + obj);
+            obj.newGameClicked += (NewGameClicked)((x, y) => Console.WriteLine("asd: " + x + " y: " + y));
 
             List<object> testF = obj.testFunction("yadaadada");
             Console.WriteLine("Result from function call: " + testF[0] + testF[1]);
@@ -51,7 +43,12 @@ namespace Bootstrap
 
             var color = Color.FromArgb(255, 0, 0, 128);
 
-            obj.color = color;
+            obj.color = color;*/
+        }
+
+        public void DrawFrame(dynamic obj)
+        {
+            
         }
 
     }
