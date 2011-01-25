@@ -46,12 +46,28 @@ namespace Bootstrap
             return InvokeMember(_handle, binder.Name, args, out result);
         }
 
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            return GetProperty(_handle, binder.Name, out result);
+        }
+
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            return SetProperty(_handle, binder.Name, value);
+        }
+
         #region Internal Calls
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern void FreeHandle(IntPtr handle);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         private static extern bool InvokeMember(IntPtr handle, string name, object[] args, out object result);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern bool GetProperty(IntPtr handle, string name, out object result);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern bool SetProperty(IntPtr handle, string name, object value);
         #endregion
     }
 }

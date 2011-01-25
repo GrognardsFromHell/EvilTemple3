@@ -1,8 +1,10 @@
 
-#ifndef MONOPP_H
-#define MONOPP_H
+#if !defined(__QTMONO_MONOPP_H__)
+#define __QTMONO_MONOPP_H__
 
 #include <assert.h>
+
+#include <QVector>
 
 namespace mono {
 #include <mono/jit/jit.h>
@@ -10,8 +12,6 @@ namespace mono {
 #include <mono/metadata/debug-helpers.h>
 #include <mono/metadata/mono-config.h>
 }
-
-#include <QVector>
 
 namespace monopp {
 
@@ -426,6 +426,22 @@ inline uint fromMono(mono::MonoObject *obj) {
     return monoUnbox<uint>(obj);
 }
 
+template<>
+inline qint8 fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_sbyte_class());
+
+    return monoUnbox<qint8>(obj);
+}
+
+template<>
+inline quint8 fromMono(mono::MonoObject *obj) {
+    assert(obj != NULL);
+    assert(mono::mono_object_get_class(obj) == mono::mono_get_byte_class());
+
+    return monoUnbox<quint8>(obj);
+}
+
 // Unwraps a single
 template<>
 inline float fromMono(mono::MonoObject *obj) {
@@ -442,6 +458,31 @@ inline double fromMono(mono::MonoObject *obj) {
     assert(mono::mono_object_get_class(obj) == mono::mono_get_double_class());
 
     return monoUnbox<double>(obj);
+}
+
+inline QString fromMonoString(mono::MonoString *str) {
+    mono::mono_unichar2 *rawStr = mono_string_chars(str);
+    QChar *ch = (QChar*)rawStr;
+    int size = mono_string_length(str);
+    return QString::fromRawData(ch, size);
+}
+
+inline mono::MonoString *toMonoString(const QString &str) {
+    mono::MonoDomain *domain = mono::mono_domain_get();
+    return mono_string_new_utf16(domain, str.utf16(), str.length());
+}
+
+inline void handleMonoException(mono::MonoObject *ex)
+{
+    mono::MonoObject *toStringEx = NULL;
+    mono::MonoString *exStr = mono::mono_object_to_string(ex, &toStringEx);
+
+    if (toStringEx) {
+        qWarning("Unable to convert exception to string, because an inner exception occurred.");
+        return;
+    }
+
+    qWarning("Uncaught Mono Exception: %s", qPrintable(fromMonoString(exStr)));
 }
 
 }

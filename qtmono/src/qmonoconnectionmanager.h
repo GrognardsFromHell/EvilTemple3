@@ -21,7 +21,7 @@ class QMonoConnectionManager : public QObject {
 public:
     QMonoConnectionManager(mono::MonoDomain *domain);
     ~QMonoConnectionManager();
-
+    
     static const QMetaObject staticMetaObject;
     virtual const QMetaObject *metaObject() const;
     virtual void *qt_metacast(const char *);

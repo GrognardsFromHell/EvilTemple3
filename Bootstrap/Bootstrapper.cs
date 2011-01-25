@@ -1,8 +1,12 @@
 ﻿using System;
+using System.Drawing;
+using Bootstrap;
 using Runtime;
 
 namespace Bootstrap
 {
+
+
     public sealed class Bootstrapper
     {
         /// <summary>
@@ -33,9 +37,13 @@ namespace Bootstrap
             if (!_inited)
             {
                 Console.WriteLine("Registering Event on obj: " + obj);
-                obj.newGameClicked((NewGameClicked)((x, y) => Console.WriteLine("asd: " + x + " y: " + y)));
+                obj.newGameClicked += (NewGameClicked) ((x, y) => Console.WriteLine("asd: " + x + " y: " + y));
                 _inited = true;
             }
+            
+            var color = Color.FromArgb(255, 0, 0, 128);
+
+            obj.color = color;
         }
 
     }

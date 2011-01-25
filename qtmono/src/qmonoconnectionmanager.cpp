@@ -5,7 +5,6 @@
 
 #include "qmonoconnectionmanager.h"
 
-
 static const uint qt_meta_data_QtObjectConnectionManager[] = {
 
     // content:
