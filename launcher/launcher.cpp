@@ -74,11 +74,7 @@ int main(int argc, char* argv[])
         qWarning("Unable to initialize QMonoQObjectWrapper services: %s", qPrintable(monoQObjectWrapper->error()));
         return -1;
     }
-
-    MonoDelegate<DrawFrameEvent> paintDelegate(delegateObj);
-
-    DrawFrameEvent drawFrameEvent = paintDelegate.functionPointer();
-
+    
     QGLContext *context = const_cast<QGLContext*>(QGLContext::currentContext());
 
     mainWindow->makeCurrent();
