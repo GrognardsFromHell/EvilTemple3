@@ -10,6 +10,7 @@ namespace Bootstrap
 
     public sealed class Bootstrapper
     {
+
         /// <summary>
         /// This method is called by the startup code from C++. The actual game will be launched, after this method
         /// returns. This is due to internal workings of Mono and this method may be removed in the future.
@@ -21,15 +22,19 @@ namespace Bootstrap
             return 0;
         }
 
-        private delegate void NewGameClicked(string f, int otherArg);
-
-        public void ApplicationStartup(dynamic gameWindow)
+        public static void Startup()
         {
-            IGameWindow gw = new GameWindow(gameWindow);
+            Console.WriteLine("Application startup hook called.");
+
+            var gameView = SystemObjects.GameView;
+
+            gameView.AddInterfaceItem("interface/MainMenu.qml");
+
+            /*IGameWindow gw = new GameWindow(gameWindow);
             gw.WindowTitle = "EvilTemple";
 
             var b = new Bootstrapper();
-            gw.DrawFrameEvent += b.DrawFrame;
+            gw.DrawFrameEvent += b.DrawFrame;*/
             /*
             Console.WriteLine("Registering Event on obj: " + obj);
             obj.newGameClicked += (NewGameClicked)((x, y) => Console.WriteLine("asd: " + x + " y: " + y));
@@ -46,9 +51,9 @@ namespace Bootstrap
             obj.color = color;*/
         }
 
-        public void DrawFrame(dynamic obj)
+        public static void DrawFrame()
         {
-            
+            Console.WriteLine("Draw Frame");
         }
 
     }

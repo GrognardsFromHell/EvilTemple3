@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Runtime
 {
-    interface IGameView
+    public interface IGameView
     {
 
         /// <summary>

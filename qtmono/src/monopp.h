@@ -228,6 +228,10 @@ public:
         return result;
     }
 
+	void *unmanagedThunk() const {
+		return mono::mono_method_get_unmanaged_thunk(mMethod);
+	}
+
     mono::MonoMethodSignature *signature() const {
         return mono::mono_method_signature(mMethod);
     }

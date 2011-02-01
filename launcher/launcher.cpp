@@ -20,10 +20,13 @@
 
 using namespace monopp;
 
+void addSystemObject(MonoImage &image, const QString &name, mono::MonoObject *object);
 void loadFonts();
 void loadFont(const QString &filename);
 
 void handleMonoException(mono::MonoObject *ex);
+
+typedef void (__stdcall *NoArgCallbackMethod)(mono::MonoObject **exc);
 
 int main(int argc, char* argv[])
 {
@@ -75,30 +78,47 @@ int main(int argc, char* argv[])
         return -1;
     }
     
-    QGLContext *context = const_cast<QGLContext*>(QGLContext::currentContext());
-
     mainWindow->makeCurrent();
 
     glewInit();
 
     EvilTemple::GameView gameView;    
     gameView.setViewport(mainWindow);
-
-
-    QObject *obj = gameView.addGuiItem("interface/MainMenu.qml");
-        
-    mono::MonoObject *mainMenuWrapper = QMonoQObjectWrapper::getInstance()->create(obj);
-
+	
     gameView.show();
+
+	mono::MonoObject *wrappedGameView = QMonoQObjectWrapper::getInstance()->create(&gameView);
+
+	addSystemObject(image, "GameView", wrappedGameView);
+
+	qDebug("Finished registering system objects.");
+
+	
+    MonoMethodDesc startupMethodDesc("Bootstrap.Bootstrapper:Startup()");
+	
+    MonoMethodDesc drawFrameMethodDesc("Bootstrap.Bootstrapper:DrawFrame()");
+
+	MonoMethod startupMethod = image.findMethod(startupMethodDesc);
+
+	MonoMethod drawFrameMethod = image.findMethod(drawFrameMethodDesc);
+
+	Q_ASSERT(startupMethod && drawFrameMethod);
+
+	NoArgCallbackMethod startupMethodFn = (NoArgCallbackMethod)startupMethod.unmanagedThunk();
+	NoArgCallbackMethod drawFrameMethodFn = (NoArgCallbackMethod)drawFrameMethod.unmanagedThunk();
     
+	mono::MonoObject *ex = NULL;
+	startupMethodFn(&ex);
+	if (ex)
+		monopp::handleMonoException(ex);
+
     while (mainWindow->isVisible()) {
-        mono::MonoObject *ex = NULL;
+        if (mainWindow->isActiveWindow()) {
+			ex = NULL;
+            drawFrameMethodFn(&ex);
 
-        if (mainWindow->isActiveWindow())
-            drawFrameEvent(paintDelegate, mainMenuWrapper, &ex);
-
-        if (ex) {
-            monopp::handleMonoException(ex);
+			if (ex)
+	            monopp::handleMonoException(ex);
         }
         
         QPainter painter(mainWindow);
@@ -115,6 +135,24 @@ int main(int argc, char* argv[])
     mainWindow->doneCurrent();
 
     return 0;
+}
+
+static void addSystemObject(MonoImage &image, const QString &name, mono::MonoObject *object)
+{
+    MonoMethodDesc addMethodDesc("Bootstrap.SystemObjects:Add(string,object)");
+    
+    MonoMethod method = image.findMethod(addMethodDesc);
+
+	Q_ASSERT(method.isValid());
+
+	mono::MonoString *monoName = toMonoString(name);
+
+	void* params[2] = {monoName, object};
+	mono::MonoObject *exc = NULL;
+	mono::mono_runtime_invoke(method, NULL, params, &exc);
+	if (exc) {
+		monopp::handleMonoException(exc);
+	}
 }
 
 static void loadFonts()

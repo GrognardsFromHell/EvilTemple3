@@ -3,6 +3,7 @@
 #include <QMetaType>
 #include <QMetaMethod>
 #include <QColor>
+#include <QUrl>
 
 #include "qmonoconnectionmanager.h"
 #include "qmonoqobjectwrapper.h"
@@ -184,6 +185,12 @@ bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono
                         case QMetaType::QVariant:
                             data = new QVariant(wrapper->convertObjectToVariant(monoArg));
                             break;
+						case QMetaType::QString:
+							data = new QString(monopp::fromMonoString((mono::MonoString*)monoArg));
+							break;
+						case QMetaType::QUrl:
+							data = new QUrl(wrapper->convertObjectToVariant(monoArg).toString());
+							break;
                         // TODO: Add other parameter-types that should be supported here.
                         }
                         
@@ -209,6 +216,10 @@ bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono
                     case QMetaType::QVariant:
                         *result = wrapper->convertVariantToObject(*reinterpret_cast<QVariant*>(returnArgValue));
                         // TODO: Add other return-types that should be supported here.
+						break;
+					case QMetaType::QObjectStar:
+						*result = wrapper->create(*reinterpret_cast<QObject**>(returnArgValue));
+						break;
                     }
 
                     QMetaType::destroy(returnTypeId, returnArgValue);                    
@@ -466,6 +477,9 @@ mono::MonoObject *QMonoQObjectWrapper::create(QObject *obj)
         qWarning("Attempting to create a QMonoObjectWrapper without first initializing the class.");
         return NULL;
     }
+	
+	if (!obj)
+		return NULL;
 
     QPointer<QObject> *handle = new QPointer<QObject>(obj);
 
