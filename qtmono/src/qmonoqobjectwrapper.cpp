@@ -46,6 +46,8 @@ public:
     mono::MonoMethod *objectListCtor;
     mono::MonoMethod *objectListAdd;
 
+	QVector<int> qObjectSubclassIds;
+
     void findGenericClasses(monopp::MonoImage monoImage);
 
     QMonoConnectionManager *connectionManager;
@@ -220,6 +222,13 @@ bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono
 					case QMetaType::QObjectStar:
 						*result = wrapper->create(*reinterpret_cast<QObject**>(returnArgValue));
 						break;
+					default:
+						if (wrapper->d->qObjectSubclassIds.contains(returnTypeId)) {
+							*result = wrapper->create(*reinterpret_cast<QObject**>(returnArgValue));
+						} else {
+							qWarning("Unable to handle unknown method return type %d.", returnTypeId);
+						}
+						break;
                     }
 
                     QMetaType::destroy(returnTypeId, returnArgValue);                    
@@ -305,6 +314,11 @@ mono::MonoObject *QMonoQObjectWrapper::convertVariantToObject(const QVariant &va
             return resultList;
         }
         break;
+	case QVariant::UserType:
+		if (d->qObjectSubclassIds.contains(variant.userType())) {
+			return create(*reinterpret_cast<QObject* const *>(variant.constData()));
+		}
+		break;
     }
 
     qWarning("Unable to convert variant type %s to a mono type.", variant.typeName());
@@ -485,7 +499,7 @@ mono::MonoObject *QMonoQObjectWrapper::create(QObject *obj)
 
     mono::MonoObject *result = mono::mono_object_new(d->monoDomain, d->managedWrapperClass);
 
-    qDebug("Initializing wrapper class for QObject %x", handle);
+	qDebug("Initializing wrapper class for QObject %x (Class: %s)", handle, obj->metaObject()->className());
 
     void *params[1] = {&handle};
     mono::MonoObject *exc = NULL;
@@ -647,4 +661,9 @@ void __stdcall QMonoQObjectWrapper::ConnectToSignal(QPointer<QObject> *handle, m
 void __stdcall QMonoQObjectWrapper::DisconnectFromSignal(QPointer<QObject> *handle, mono::MonoString *name, mono::MonoObject *handler)
 {
 
+}
+
+void QMonoQObjectWrapper::registerQObjectSubtype(int typeId)
+{
+	d->qObjectSubclassIds.append(typeId);
 }

@@ -73,6 +73,8 @@ int main(int argc, char* argv[])
 
     auto monoQObjectWrapper = QMonoQObjectWrapper::getInstance();
 
+	monoQObjectWrapper->registerQObjectSubtype<EvilTemple::Scene*>();
+
     if (!monoQObjectWrapper->initialize(connectionManager, domain)) {
         qWarning("Unable to initialize QMonoQObjectWrapper services: %s", qPrintable(monoQObjectWrapper->error()));
         return -1;

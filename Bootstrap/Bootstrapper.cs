@@ -28,7 +28,10 @@ namespace Bootstrap
 
             var gameView = SystemObjects.GameView;
 
-            gameView.AddInterfaceItem("interface/MainMenu.qml");
+            var guiItem = gameView.AddInterfaceItem("interface/MainMenu.qml");
+            guiItem.newGameClicked += (Action)(() => guiItem.deleteLater());
+
+            var scene = gameView.Scene;
 
             /*IGameWindow gw = new GameWindow(gameWindow);
             gw.WindowTitle = "EvilTemple";
@@ -53,7 +56,6 @@ namespace Bootstrap
 
         public static void DrawFrame()
         {
-            Console.WriteLine("Draw Frame");
         }
 
     }

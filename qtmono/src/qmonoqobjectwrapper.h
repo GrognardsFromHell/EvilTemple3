@@ -20,7 +20,17 @@ public:
     
     mono::MonoObject *create(QObject *object);
 
+	template<typename T>
+	void registerQObjectSubtype(T dummy = NULL)
+	{
+		QObject *ptrTest = dummy; // This shouldn't compile if T is not assignable to QObject*
+		Q_UNUSED(ptrTest);
+		registerQObjectSubtype(qRegisterMetaType<T>());
+	}
+
 private:
+	void registerQObjectSubtype(int metaTypeId);
+
     QMonoQObjectWrapper();
     ~QMonoQObjectWrapper();
 

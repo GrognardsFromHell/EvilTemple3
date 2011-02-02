@@ -8,6 +8,8 @@ namespace Runtime
     public interface IGameView
     {
 
+        IGameScene Scene { get; }
+
         /// <summary>
         /// Creates and adds an interface item to the game view.
         /// </summary>

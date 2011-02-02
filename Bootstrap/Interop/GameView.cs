@@ -21,5 +21,13 @@ namespace Bootstrap.Interop
             return _object.addGuiItem(url);
         }
 
+        public IGameScene Scene
+        {
+            get
+            {
+                return new GameScene(_object.scene);
+            }
+        }
+
     }
 }
