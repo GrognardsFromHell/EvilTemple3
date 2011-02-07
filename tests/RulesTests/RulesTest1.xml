@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Rules>
+
+  <Race id="human">
+    <Name>Humans</Name>
+    <Description></Description>
+    <MaleCharacteristics>
+      <Prototype>1245</Prototype>
+      <Height Min="12" Max="32" />
+    </MaleCharacteristics>
+  </Race>
+  
+</Rules>
