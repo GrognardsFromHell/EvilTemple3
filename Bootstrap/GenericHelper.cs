@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Bootstrap
 {
@@ -11,7 +13,33 @@ namespace Bootstrap
     {
         public static List<object> objectList;
 
+        public static IList<object> objectIList;
+
         public static Dictionary<string, object> objectDict;
+
+        public static IDictionary<string, object> objectIDict;
+
+        static void UnwrapList(IList<object> list, int nativeListHandle)
+        {
+            Console.WriteLine("Unwrapping list. " + nativeListHandle.ToString("X"));
+            foreach (var value in list)
+                AddVariantListItem(nativeListHandle, value);
+        }
+
+        static void UnwrapDictionary(IDictionary<string, object> obj, int unwrapHandle)
+        {
+            Console.WriteLine("Unwrapping map. " + unwrapHandle.ToString("X"));
+            foreach (var kvp in obj)
+            {
+                AddVariantMapItem(unwrapHandle, kvp.Key, kvp.Value);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern void AddVariantListItem(int handle, object value);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        private extern static void AddVariantMapItem(int handle, string key, object value);
 
     }
 }

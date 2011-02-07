@@ -39,7 +39,7 @@ private:
 
     mono::MonoObject *convertVariantToObject(const QVariant &variant);
     QVariant convertObjectToVariant(mono::MonoObject *object);
-
+    
     static bool __stdcall InvokeMember(QPointer<QObject> *handle, mono::MonoString *name, mono::MonoArray *args, mono::MonoObject **result);
     static void __stdcall FreeHandle(QPointer<QObject> *handle);
     static bool __stdcall GetProperty(QPointer<QObject> *handle, mono::MonoString *name, mono::MonoObject **result);
@@ -47,6 +47,9 @@ private:
 
     static void __stdcall ConnectToSignal(QPointer<QObject> *handle, mono::MonoString *name, mono::MonoObject *handler);
     static void __stdcall DisconnectFromSignal(QPointer<QObject> *handle, mono::MonoString *name, mono::MonoObject *handler);
+
+    static void __stdcall AddVariantListItem(QVariantList *list, mono::MonoObject *obj);
+    static void __stdcall AddVariantMapItem(QVariantMap *map, mono::MonoString *key, mono::MonoObject *obj);
 
     Q_DISABLE_COPY(QMonoQObjectWrapper)
 };

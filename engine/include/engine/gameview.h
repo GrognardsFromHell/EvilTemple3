@@ -103,6 +103,8 @@ public:
     const QString &currentCursor() const;
     void setCurrentCursor(const QString &filename);
 
+    void paint();
+
 signals:
 
     void viewportChanged();
@@ -148,7 +150,7 @@ public slots:
       Gets the world coordinates from the given screen coordinates (relative
       to the current viewport).
       */
-    Vector4 worldFromScreen(uint x, uint y) const;
+    Vector4 worldFromScreen(uint x, uint y) const;       
 
 protected:
     void resizeEvent(QResizeEvent *event);
@@ -160,7 +162,8 @@ protected:
     void keyPressEvent(QKeyEvent *event);
 
     void drawBackground(QPainter *painter, const QRectF &rect);
-
+    void paintEvent(QPaintEvent *event);
+    
 private:
     int mScrollBoxMinX, mScrollBoxMaxX, mScrollBoxMinY, mScrollBoxMaxY;
     int mScrollingBorder;

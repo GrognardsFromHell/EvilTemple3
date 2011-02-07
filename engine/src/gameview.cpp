@@ -885,6 +885,7 @@ namespace EvilTemple {
             return false;
         }
 
+        d->movieEmptyScene.setBackgroundBrush(QBrush(Qt::NoBrush));
         setScene(&d->movieEmptyScene);
 
         d->mPlayingVideo = true;
@@ -998,6 +999,21 @@ namespace EvilTemple {
     Vector4 GameView::worldFromScreen(uint x, uint y) const
     {
         return d->worldPositionFromScreen(QPoint(x, y));
+    }
+
+    void GameView::paintEvent(QPaintEvent *event)
+    {
+        Q_UNUSED(event);
+        /*
+        Since we want total control over how often the game view gets drawn within the main loop,
+        we disable processing of paint events here and call the super-class's paintEvent method manually.
+        */
+    }
+
+    void GameView::paint()
+    {
+        QPaintEvent e(QRect(QPoint(0, 0), size()));
+        QGraphicsView::paintEvent(&e);
     }
 
 }

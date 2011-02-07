@@ -15,7 +15,7 @@ namespace Bootstrap.Interop
         {
             _gameWindow = gameWindow;
         }
-
+        
         public string WindowTitle
         {
             get { return _gameWindow.windowTitle; }
@@ -56,10 +56,9 @@ namespace Bootstrap.Interop
             set { throw new NotImplementedException(); }
         }
 
-        public event DrawFrameHandler DrawFrameEvent
+        public void Close()
         {
-            add { _gameWindow.drawFrameEvent += value; }
-            remove { _gameWindow.drawFrameEvent -= value; }
+            _gameWindow.close();
         }
     }
 }

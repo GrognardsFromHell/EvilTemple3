@@ -8,6 +8,7 @@
 #include <QtMono/QtMono>
 #include <QtMono/QMonoConnectionManager>
 #include <QtMono/QMonoQObjectWrapper>
+#include <QMessageBox>
 
 #include "datafileengine.h"
 
@@ -18,13 +19,17 @@
 #include <QElapsedTimer>
 #include <QGLWidget>
 
+#include <iostream>
+
+#include "framecounter.h"
+
 using namespace monopp;
 
-void addSystemObject(MonoImage &image, const QString &name, mono::MonoObject *object);
+void addSystemObject(MonoImage &image, const QString &name, QObject *object);
 void loadFonts();
 void loadFont(const QString &filename);
 
-void handleMonoException(mono::MonoObject *ex);
+void handleFatalMonoException(mono::MonoObject *ex);
 
 typedef void (__stdcall *NoArgCallbackMethod)(mono::MonoObject **exc);
 
@@ -43,8 +48,6 @@ int main(int argc, char* argv[])
 
     qDebug("Expecting Bootstrap.dll at %s", qPrintable(filename));
 
-    MainWindow *mainWindow = new MainWindow;
-    
     MonoDomain domain("yada", MonoDomain::DotNet4);
             
     MonoAssembly assembly = domain.openAssembly(qPrintable(filename));
@@ -79,23 +82,20 @@ int main(int argc, char* argv[])
         qWarning("Unable to initialize QMonoQObjectWrapper services: %s", qPrintable(monoQObjectWrapper->error()));
         return -1;
     }
-    
+
+    MainWindow *mainWindow = new MainWindow;
     mainWindow->makeCurrent();
 
     glewInit();
 
     EvilTemple::GameView gameView;    
     gameView.setViewport(mainWindow);
+
+    gameView.resize(800, 600);
 	
-    gameView.show();
-
-	mono::MonoObject *wrappedGameView = QMonoQObjectWrapper::getInstance()->create(&gameView);
-
-	addSystemObject(image, "GameView", wrappedGameView);
-
-	qDebug("Finished registering system objects.");
-
-	
+    addSystemObject(image, "GameView", &gameView);
+    addSystemObject(image,"GameWindow", mainWindow);
+    
     MonoMethodDesc startupMethodDesc("Bootstrap.Bootstrapper:Startup()");
 	
     MonoMethodDesc drawFrameMethodDesc("Bootstrap.Bootstrapper:DrawFrame()");
@@ -111,10 +111,20 @@ int main(int argc, char* argv[])
     
 	mono::MonoObject *ex = NULL;
 	startupMethodFn(&ex);
-	if (ex)
-		monopp::handleMonoException(ex);
+	if (ex) {
+		handleFatalMonoException(ex);
+        return -1;
+    }
 
+    gameView.show();
+
+    FrameCounter fpsCounter;
+        
     while (mainWindow->isVisible()) {
+        if (fpsCounter.frameDrawn()) {
+            gameView.setWindowTitle(QString("EvilTemple - (FPS: %1)").arg(fpsCounter.fps()));
+        }
+
         if (mainWindow->isActiveWindow()) {
 			ex = NULL;
             drawFrameMethodFn(&ex);
@@ -123,12 +133,7 @@ int main(int argc, char* argv[])
 	            monopp::handleMonoException(ex);
         }
         
-        QPainter painter(mainWindow);
-        gameView.render(&painter);
-        painter.end();
-
-        // Swap front/back buffer
-        mainWindow->swapBuffers();
+        gameView.paint();
 
         // Process user input events
         a.processEvents();
@@ -136,11 +141,15 @@ int main(int argc, char* argv[])
 
     mainWindow->doneCurrent();
 
+    gameView.setViewport(NULL); // This deletes the old viewport!
+
     return 0;
 }
 
-static void addSystemObject(MonoImage &image, const QString &name, mono::MonoObject *object)
+static void addSystemObject(MonoImage &image, const QString &name, QObject *object)
 {
+    mono::MonoObject *wrappedObject = QMonoQObjectWrapper::getInstance()->create(object);
+
     MonoMethodDesc addMethodDesc("Bootstrap.SystemObjects:Add(string,object)");
     
     MonoMethod method = image.findMethod(addMethodDesc);
@@ -149,7 +158,7 @@ static void addSystemObject(MonoImage &image, const QString &name, mono::MonoObj
 
 	mono::MonoString *monoName = toMonoString(name);
 
-	void* params[2] = {monoName, object};
+	void* params[2] = {monoName, wrappedObject};
 	mono::MonoObject *exc = NULL;
 	mono::mono_runtime_invoke(method, NULL, params, &exc);
 	if (exc) {
@@ -174,3 +183,26 @@ static void loadFont(const QString &filename)
         qWarning("Unable to load font %s.", qPrintable(filename));
     }
 }
+
+static void handleFatalMonoException(mono::MonoObject *ex)
+{
+    mono::MonoObject *toStringEx = NULL;
+    mono::MonoString *exStr = mono::mono_object_to_string(ex, &toStringEx);
+
+    QString errorMessage;
+
+    if (toStringEx) {
+        errorMessage = "Unable to convert exception to string, because an inner exception occurred.";
+    } else {
+        errorMessage = fromMonoString(exStr);
+    }
+
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("Uncaught Mono Exception");
+    msgBox.setWindowModality(Qt::WindowModal);
+    msgBox.setText("An uncaught Exception occurred in the scripts.\nThe application will shut down now.");
+    msgBox.setDetailedText(errorMessage);
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.exec();
+}
+

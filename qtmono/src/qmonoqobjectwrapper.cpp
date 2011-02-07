@@ -18,6 +18,9 @@ QMonoQObjectWrapper *QMonoQObjectWrapper::getInstance()
     return instance;
 }
 
+typedef void (__stdcall *UnwrapDictionaryFn)(mono::MonoObject *dict, QVariantMap **map, mono::MonoObject **exc);
+typedef void (__stdcall *UnwrapListFn)(mono::MonoObject *dict, QVariantList **map, mono::MonoObject **exc);
+
 class QMonoQObjectWrapper::Data {
 public:
     Data() 
@@ -27,7 +30,9 @@ public:
     managedWrapperClassCtor(NULL), 
     connectionManager(NULL),    
     managedEventHelperClass(NULL),
-    managedEventHelperClassCtor(NULL) {}
+    managedEventHelperClassCtor(NULL),
+    unwrapDictMethod(NULL),
+    unwrapListMethod(NULL) {}
 
     bool initialized;
     mono::MonoDomain *monoDomain;
@@ -41,17 +46,22 @@ public:
     mono::MonoClass *objectDictClass;
     mono::MonoMethod *objectDictCtor;
     mono::MonoMethod *objectDictAdd;
-
+    
     mono::MonoClass *objectListClass;
     mono::MonoMethod *objectListCtor;
     mono::MonoMethod *objectListAdd;
 
+    mono::MonoClass *objectIListClass;
+    mono::MonoMethod *unwrapListMethod;
+    mono::MonoClass *objectIDictClass;
+    mono::MonoMethod *unwrapDictMethod;
+    
 	QVector<int> qObjectSubclassIds;
 
     void findGenericClasses(monopp::MonoImage monoImage);
 
     QMonoConnectionManager *connectionManager;
-    QString error;        
+    QString error;      
 };
 
 void QMonoQObjectWrapper::Data::findGenericClasses(monopp::MonoImage monoImage)
@@ -69,6 +79,18 @@ void QMonoQObjectWrapper::Data::findGenericClasses(monopp::MonoImage monoImage)
     objectDictClass = mono::mono_class_from_mono_type (mono::mono_field_get_type(objectDictField));
     objectDictCtor = mono::mono_class_get_method_from_name(objectDictClass, ".ctor", 0);
     objectDictAdd = mono::mono_class_get_method_from_name(objectDictClass, "Add", 2);
+
+    auto field = mono::mono_class_get_field_from_name(genericHelperClass, "objectIList");
+    objectIListClass = mono::mono_class_from_mono_type (mono::mono_field_get_type(field));
+
+    field = mono::mono_class_get_field_from_name(genericHelperClass, "objectIDict");
+    objectIDictClass = mono::mono_class_from_mono_type (mono::mono_field_get_type(field));
+
+    unwrapListMethod = mono::mono_class_get_method_from_name(genericHelperClass, "UnwrapList", 2);
+    Q_ASSERT(unwrapListMethod);
+
+    unwrapDictMethod = mono::mono_class_get_method_from_name(genericHelperClass, "UnwrapDictionary", 2);
+    Q_ASSERT(unwrapDictMethod);
 }
 
 QMonoQObjectWrapper::QMonoQObjectWrapper() : d(new Data)
@@ -217,12 +239,15 @@ bool __stdcall QMonoQObjectWrapper::InvokeMember(QPointer<QObject> *handle, mono
                     switch (returnTypeId) {
                     case QMetaType::QVariant:
                         *result = wrapper->convertVariantToObject(*reinterpret_cast<QVariant*>(returnArgValue));
-                        // TODO: Add other return-types that should be supported here.
 						break;
 					case QMetaType::QObjectStar:
 						*result = wrapper->create(*reinterpret_cast<QObject**>(returnArgValue));
 						break;
-					default:
+                    case QMetaType::Bool:
+                        *result = monopp::toMono(*reinterpret_cast<bool*>(returnArgValue));
+                        break;
+                    // TODO: Add other return-types that should be supported here.
+                    default:
 						if (wrapper->d->qObjectSubclassIds.contains(returnTypeId)) {
 							*result = wrapper->create(*reinterpret_cast<QObject**>(returnArgValue));
 						} else {
@@ -425,6 +450,43 @@ QVariant QMonoQObjectWrapper::convertObjectToVariant(mono::MonoObject *object)
         quint8 blue = argb & 0xFF;
         
         return QColor(red, green, blue, alpha);
+    } else if (mono::mono_class_is_assignable_from(d->objectIDictClass, objectClass)) {
+
+
+        QVariant result(QVariant::Map);
+
+        mono::MonoObject *exc = NULL;
+
+        QVariantMap *mapPtr = reinterpret_cast<QVariantMap*>(result.data());
+
+        void *params[2] = { object, &mapPtr };
+        mono::mono_runtime_invoke(d->unwrapDictMethod, NULL, params, &exc);
+
+        if (exc) {
+            monopp::handleMonoException(exc);
+            return QVariant();
+        }
+
+        return result;
+        
+    } else if (mono::mono_class_is_assignable_from(d->objectIListClass, objectClass)) {
+        
+        mono::MonoObject *exc = NULL;
+
+        QVariant result;
+
+        QVariantList *listPtr = reinterpret_cast<QVariantList*>(result.data());
+                
+        void *params[2] = { object, &listPtr };
+        mono::mono_runtime_invoke(d->unwrapListMethod, NULL, params, &exc);
+
+        if (exc) {
+            monopp::handleMonoException(exc);
+            return QVariant();
+        }
+
+        return result;
+
     }
 
     return QVariant();
@@ -606,6 +668,8 @@ bool QMonoQObjectWrapper::initialize(QMonoConnectionManager *connectionManager, 
     mono::mono_add_internal_call("Bootstrap.QObjectWrapper::SetProperty", SetProperty);
     mono::mono_add_internal_call("Bootstrap.EventSubscriptionHelper::ConnectToSignal", ConnectToSignal);
     mono::mono_add_internal_call("Bootstrap.EventSubscriptionHelper::DisconnectFromSignal", DisconnectFromSignal);
+    mono::mono_add_internal_call("Bootstrap.GenericHelper::AddVariantListItem", AddVariantListItem);
+    mono::mono_add_internal_call("Bootstrap.GenericHelper::AddVariantMapItem", AddVariantMapItem);
 
     d->findGenericClasses(image);
 
@@ -666,4 +730,25 @@ void __stdcall QMonoQObjectWrapper::DisconnectFromSignal(QPointer<QObject> *hand
 void QMonoQObjectWrapper::registerQObjectSubtype(int typeId)
 {
 	d->qObjectSubclassIds.append(typeId);
+}
+
+void __stdcall QMonoQObjectWrapper::AddVariantListItem(QVariantList *list, mono::MonoObject *obj)
+{
+    QVariant value = getInstance()->convertObjectToVariant(obj);
+    if (!value.isValid()) {
+        qWarning("Unable to convert value for list element @ %d", list->size());
+    } else {
+        list->append(value);
+    }
+}
+
+void __stdcall QMonoQObjectWrapper::AddVariantMapItem(QVariantMap *map, mono::MonoString *key, mono::MonoObject *obj)
+{
+    QVariant value = getInstance()->convertObjectToVariant(obj);
+    QString keyString(monopp::fromMonoString(key));
+    if (!value.isValid()) {
+        qWarning("Unable to convert value for key %s in map.", qPrintable(keyString));
+    } else {
+        map->insert(keyString, value);
+    }
 }

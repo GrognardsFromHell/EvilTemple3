@@ -488,6 +488,25 @@ inline double fromMono(mono::MonoObject *obj) {
     return monoUnbox<double>(obj);
 }
 
+template<typename T>
+inline mono::MonoObject* toMono(T value) {
+    static_assert(false, "No specializations is available for this type.");
+}
+
+template<typename T>
+inline mono::MonoObject *monoBoxObject(mono::MonoClass *klass, T value)
+{
+    mono::MonoObject *result = mono::mono_object_new(mono::mono_domain_get(), klass);
+    auto ptr = reinterpret_cast<T*>(mono::mono_object_unbox(result));
+    *ptr = value;
+    return result;
+}
+
+template<>
+inline mono::MonoObject* toMono(bool value) {
+    return monoBoxObject(mono::mono_get_boolean_class(), value);
+}
+
 inline QString fromMonoString(mono::MonoString *str) {
     mono::mono_unichar2 *rawStr = mono_string_chars(str);
     QChar *ch = (QChar*)rawStr;

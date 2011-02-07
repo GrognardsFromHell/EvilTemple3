@@ -21,6 +21,11 @@ namespace Bootstrap.Interop
             return _object.addGuiItem(url);
         }
 
+        public bool PlayMovie(string filename)
+        {
+            return _object.playMovie(filename);
+        }
+        
         public IGameScene Scene
         {
             get

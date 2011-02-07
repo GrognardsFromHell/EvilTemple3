@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Drawing;
-using Bootstrap;
-using Bootstrap.Interop;
-using Runtime;
+using Gui;
 
 namespace Bootstrap
 {
@@ -26,12 +22,12 @@ namespace Bootstrap
         {
             Console.WriteLine("Application startup hook called.");
 
-            var gameView = SystemObjects.GameView;
+            if (!SystemObjects.CheckConsistency())
+                throw new InvalidOperationException("Not all system objects have been set by the C++ code.");
 
-            var guiItem = gameView.AddInterfaceItem("interface/MainMenu.qml");
-            guiItem.newGameClicked += (Action)(() => guiItem.deleteLater());
-
-            var scene = gameView.Scene;
+            var mainMenu = new MainMenu(SystemObjects.GameView);
+            mainMenu.OnExitGame += ExitGame;
+            mainMenu.ShowMainMenu();
 
             /*IGameWindow gw = new GameWindow(gameWindow);
             gw.WindowTitle = "EvilTemple";
@@ -52,6 +48,11 @@ namespace Bootstrap
             var color = Color.FromArgb(255, 0, 0, 128);
 
             obj.color = color;*/
+        }
+
+        private static void ExitGame(MainMenu menu)
+        {
+            SystemObjects.GameWindow.Close();
         }
 
         public static void DrawFrame()

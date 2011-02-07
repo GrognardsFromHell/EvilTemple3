@@ -158,7 +158,10 @@ void QMonoConnectionManager::execute(int slotIndex, void **argv)
     mono::mono_runtime_delegate_invoke(delegate, argConverter.args(), &exc);
 
     if (exc) {
-        qWarning("Exception thrown when invoking Mono signal Handler.");
+        qWarning("An exception occurred while invoking the Mono handler for Signal %s on class %s.", 
+            method.signature(), 
+            method.enclosingMetaObject()->className());
+        monopp::handleMonoException(exc);
     }
 
     /*

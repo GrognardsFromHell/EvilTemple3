@@ -14,6 +14,7 @@ Rectangle {
 	
     signal newGameClicked
     signal loadGameClicked
+	signal exitGameClicked
 
     // Immediately switch to shown state to trigger fade-in transition defined below
     Component.onCompleted: {
@@ -66,7 +67,7 @@ Rectangle {
                 id: exitButton
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: 'Exit Game'
-                onClicked: Qt.quit();
+                onClicked: exitGameClicked()
             }
         }
     }
