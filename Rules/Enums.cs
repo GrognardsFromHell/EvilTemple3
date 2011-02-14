@@ -25,12 +25,12 @@ namespace Rules
 
     public enum Gender
     {
+        [LegacyLiteral("other")]
+        Other,
         [LegacyLiteral("female")]
         Female,
         [LegacyLiteral("male")]
-        Male,
-        [LegacyLiteral("other")]
-        Other
+        Male
     }
 
     public enum Alignment

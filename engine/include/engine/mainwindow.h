@@ -4,7 +4,7 @@
 #include "engine/global.h"
 
 #include <QMainWindow>
-#include <QDeclarativeView>
+#include <QtDeclarative/QDeclarativeView>
 #include <QVariant>
 
 class QGraphicsView;

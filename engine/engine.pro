@@ -56,7 +56,8 @@ SOURCES += \
 	src/profiler.cpp \
 	src/tga.cpp \
 	src/paths.cpp \
-	src/resourcemanager.cpp
+	src/resourcemanager.cpp \
+	src/datafileengine.cpp
 	
 HEADERS += \
     include/engine/mainwindow.h \
@@ -106,9 +107,8 @@ HEADERS += \
     include/engine/modelinstanceattachedscenenode.h \
 	include/engine/paths.h \
 	include/engine/resourcemanager.h \
-	include/engine/iresources.h
-	
-HEADERS += \
+	include/engine/iresources.h \
+	include/engine/datafileengine.h \
     include/engine/audioengine.h \
     include/engine/isoundsource.h \
     include/engine/soundformat.h \

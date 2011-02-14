@@ -19,14 +19,14 @@ namespace Bootstrap
 
         public static IDictionary<string, object> objectIDict;
 
-        static void UnwrapList(IList<object> list, int nativeListHandle)
+        static void UnwrapList(IList<object> list, IntPtr nativeListHandle)
         {
             Console.WriteLine("Unwrapping list. " + nativeListHandle.ToString("X"));
             foreach (var value in list)
                 AddVariantListItem(nativeListHandle, value);
         }
 
-        static void UnwrapDictionary(IDictionary<string, object> obj, int unwrapHandle)
+        static void UnwrapDictionary(IDictionary<string, object> obj, IntPtr unwrapHandle)
         {
             Console.WriteLine("Unwrapping map. " + unwrapHandle.ToString("X"));
             foreach (var kvp in obj)
@@ -36,10 +36,10 @@ namespace Bootstrap
         }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static extern void AddVariantListItem(int handle, object value);
+        private static extern void AddVariantListItem(IntPtr handle, object value);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private extern static void AddVariantMapItem(int handle, string key, object value);
+        private extern static void AddVariantMapItem(IntPtr handle, string key, object value);
 
     }
 }

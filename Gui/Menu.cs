@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Gui
+﻿namespace Gui
 {
     public class Menu
     {
@@ -16,7 +11,10 @@ namespace Gui
             set
             {
                 if (_currentMenu != null)
+                {
                     _currentMenu.deleteLater();
+                    _currentMenu.Dispose();
+                }
                 _currentMenu = value;
             }
         }

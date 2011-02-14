@@ -50,7 +50,7 @@ Item {
     signal alignmentChosen(string alignment)
     signal deityChosen(string deity)
 
-    signal activeStageRequested(string stage)
+    signal activeStageRequested(int stage)
 
     signal cancel
 

@@ -90,12 +90,6 @@ namespace EvilTemple {
 
             sceneTimer.invalidate();
 
-            qDebug("Initializing glew...");
-
-            if (glewInit() != GLEW_OK) {
-                qWarning("Unable to initialize GLEW.");
-            }
-
             GlobalTextureCache::start();
 
             if (!particleSystems.loadTemplates()) {

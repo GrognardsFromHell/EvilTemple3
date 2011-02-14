@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using Game;
 using Rules;
 using Runtime;
 
@@ -13,10 +12,17 @@ namespace Gui
     public class PartyCreation : Menu
     {
         private readonly IGameView _gameView;
+        
+        private readonly CharacterVault _vault;
 
-        public PartyCreation(IGameView gameView)
+        private readonly CreateCharacter _createCharacter;
+
+        public PartyCreation(IGameView gameView, CharacterVault vault, CreateCharacter createCharacter)
         {
             _gameView = gameView;
+            _vault = vault;
+            _createCharacter = createCharacter;
+            createCharacter.OnCancel += Show;
         }
 
         public event Action OnCancel;
@@ -47,8 +53,16 @@ namespace Gui
 
             dialog.characters = GetCharacters();
             dialog.closeClicked += (Action) Cancel;
+            dialog.createCharacterClicked += (Action) RequestCharacterCreation;
 
             CurrentMenu = dialog;
+        }
+
+        private void RequestCharacterCreation()
+        {
+            CurrentMenu = null;
+
+            _createCharacter.Show();
         }
         
         private void Cancel()
@@ -63,16 +77,18 @@ namespace Gui
             if (handler != null) handler();
         }
 
-        private IList<object> GetCharacters()
+        private IList<IDictionary<string, string>> GetCharacters()
         {
-            return new List<object> {
+            return new List<IDictionary<string, string>> {
                 GetCharacter()
             };
         }
 
-        private IDictionary<string, object> GetCharacter()
+        private IDictionary<string, string> GetCharacter()
         {
-            return new Dictionary<string, object>
+            Console.WriteLine(_vault.Characters);
+
+            return new Dictionary<string, string>
                        {
                            {"id", ""},
                            {"name", ""},

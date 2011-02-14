@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Races>
+
+  <Race id="human">
+    <Name>#mes/stat/2000</Name>
+    <Description>#mes/stat/12000</Description>
+    <Playable>true</Playable>
+    <MaleCharacteristics>
+      <Prototype>13000</Prototype>
+      <Height Min="147" Max="197" />
+      <Weight Min="120" Max="200" />
+    </MaleCharacteristics>
+    <FemaleCharacteristics>
+      <Prototype>13001</Prototype>
+      <Height Min="135" Max="185" />
+      <Weight Min="85" Max="165" />
+    </FemaleCharacteristics>
+    <LandSpeed>30</LandSpeed>
+    <StartingFeats>2</StartingFeats>
+  </Race>
+  <Race id="dwarf">
+    <Name>#mes/stat/2001</Name>
+    <Description>#mes/stat/12001</Description>
+    <Playable>true</Playable>
+    <MaleCharacteristics>
+      <Prototype>13002</Prototype>
+      <Height Min="114" Max="129" />
+      <Weight Min="130" Max="178" />
+    </MaleCharacteristics>
+    <FemaleCharacteristics>
+      <Prototype>13003</Prototype>
+      <Height Min="109" Max="134" />
+      <Weight Min="100" Max="148" />
+    </FemaleCharacteristics>
+    <LandSpeed>20</LandSpeed>
+  </Race>
+  <Race id="elf">
+    <Name>#mes/stat/2002</Name>
+    <Description>#mes/stat/12002</Description>
+    <Playable>true</Playable>
+    <MaleCharacteristics>
+      <Prototype>13004</Prototype>
+      <Height Min="135" Max="165" />
+      <Weight Min="85" Max="121" />
+    </MaleCharacteristics>
+    <FemaleCharacteristics>
+      <Prototype>13005</Prototype>
+      <Height Min="135" Max="165" />
+      <Weight Min="80" Max="116" />
+    </FemaleCharacteristics>
+    <LandSpeed>30</LandSpeed>
+  </Race>
+  <Race id="gnome">
+    <Name>#mes/stat/2003</Name>
+    <Description>#mes/stat/12003</Description>
+    <Playable>true</Playable>
+    <MaleCharacteristics>
+      <Prototype>13006</Prototype>
+      <Height Min="91" Max="111" />
+      <Weight Min="40" Max="48" />
+    </MaleCharacteristics>
+    <FemaleCharacteristics>
+      <Prototype>13007</Prototype>
+      <Height Min="86" Max="106" />
+      <Weight Min="35" Max="43" />
+    </FemaleCharacteristics>
+    <LandSpeed>20</LandSpeed>
+  </Race>
+  <Race id="halfelf">
+    <Name>#mes/stat/2004</Name>
+    <Description>#mes/stat/12004</Description>
+    <Playable>true</Playable>
+    <MaleCharacteristics>
+      <Prototype>13008</Prototype>
+      <Height Min="140" Max="180" />
+      <Weight Min="100" Max="164" />
+    </MaleCharacteristics>
+    <FemaleCharacteristics>
+      <Prototype>13009</Prototype>
+      <Height Min="135" Max="175" />
+      <Weight Min="80" Max="144" />
+    </FemaleCharacteristics>
+    <LandSpeed>30</LandSpeed>
+  </Race>
+  <Race id="halforc">
+    <Name>#mes/stat/2005</Name>
+    <Description>#mes/stat/12005</Description>
+    <Playable>true</Playable>
+    <MaleCharacteristics>
+      <Prototype>13010</Prototype>
+      <Height Min="147" Max="208" />
+      <Weight Min="150" Max="294" />
+    </MaleCharacteristics>
+    <FemaleCharacteristics>
+      <Prototype>13011</Prototype>
+      <Height Min="135" Max="195" />
+      <Weight Min="110" Max="254" />
+    </FemaleCharacteristics>
+    <LandSpeed>30</LandSpeed>
+  </Race>
+  <Race id="halfling">
+    <Name>#mes/stat/2006</Name>
+    <Description>#mes/stat/12006</Description>
+    <Playable>true</Playable>
+    <MaleCharacteristics>
+      <Prototype>13012</Prototype>
+      <Height Min="81" Max="111" />
+      <Weight Min="30" Max="38" />
+    </MaleCharacteristics>
+    <FemaleCharacteristics>
+      <Prototype>13013</Prototype>
+      <Height Min="76" Max="106" />
+      <Weight Min="25" Max="33" />
+    </FemaleCharacteristics>
+    <LandSpeed>20</LandSpeed>
+  </Race>
+
+</Races>

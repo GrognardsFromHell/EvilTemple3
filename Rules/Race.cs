@@ -1,18 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 
 namespace Rules
 {
-
-    public class Range<T> where T : struct 
+    public class Range<T> where T : IConvertible
     {
-        [XmlAttribute("min")]
+        [XmlAttribute("Min")]
         public T Min { get; set; }
 
-        [XmlAttribute("max")]
+        [XmlAttribute("Max")]
         public T Max { get; set; }
 
         internal Range()
@@ -37,6 +37,14 @@ namespace Rules
         {
             return string.Format("Min: {0}, Max: {1}", Min, Max);
         }
+
+        public int Interpolate(float factor)
+        {
+            var culture = CultureInfo.InvariantCulture;
+            var min = Min.ToInt32(culture);
+            var max = Max.ToInt32(culture);
+            return (int) Math.Floor(min + (max - min) * factor);
+        }
     }
 
     public class VisualCharacteristics
@@ -52,23 +60,30 @@ namespace Rules
     public class Race
     {
         [XmlAttribute("id")]
-        public string Id { get;  set; }
+        public string Id { get; set; }
 
-        public bool Playable { get;  set; }
+        public bool Playable { get; set; }
 
-        public string Name { get;  set; }
+        public string Name { get; set; }
 
-        public string Description { get;  set; }
+        public string Description { get; set; }
 
-        public VisualCharacteristics MaleCharacteristics { get;  set; }
+        public VisualCharacteristics MaleCharacteristics { get; set; }
 
-        public VisualCharacteristics FemaleCharacteristics { get;  set; }
+        public VisualCharacteristics FemaleCharacteristics { get; set; }
 
-        public uint LandSpeed { get;  set; }
+        public uint LandSpeed { get; set; }
 
-        public uint StartingFeats { get;  set; }
+        public uint StartingFeats { get; set; }
     }
-    
-    
 
+    public class RaceNameComparer : IComparer<Race>
+    {
+        public static readonly RaceNameComparer Instance = new RaceNameComparer();
+
+        public int Compare(Race x, Race y)
+        {
+            return x.Name.CompareTo(y.Name);
+        }
+    }
 }

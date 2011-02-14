@@ -1,5 +1,7 @@
 ﻿using System;
 using Gui;
+using Ninject;
+using Ninject.Modules;
 
 namespace Bootstrap
 {
@@ -25,7 +27,14 @@ namespace Bootstrap
             if (!SystemObjects.CheckConsistency())
                 throw new InvalidOperationException("Not all system objects have been set by the C++ code.");
 
-            var mainMenu = new MainMenu(SystemObjects.GameView);
+            var systemModule = SystemObjects.CreateModule();
+
+            var kernel = new StandardKernel(systemModule);
+
+            // Load pre-defined modules
+            // kernel.Load("Game.dll", "Gui.dll");
+
+            var mainMenu = kernel.Get<MainMenu>();
             mainMenu.OnExitGame += ExitGame;
             mainMenu.ShowMainMenu();
 

@@ -1,25 +1,26 @@
 ﻿using System;
-using Rules;
 using Runtime;
 
 namespace Gui
 {
     public class MainMenu : Menu
     {
-
         private readonly IGameView _gameView;
+        private readonly PartyCreation _partyCreation;
 
         public event Action<MainMenu> OnExitGame;
-
+        
         private void InvokeOnExitGame()
         {
             var handler = OnExitGame;
             if (handler != null) handler(this);
         }
 
-        public MainMenu(IGameView gameView)
+        public MainMenu(IGameView gameView, PartyCreation partyCreation)
         {
             _gameView = gameView;
+            _partyCreation = partyCreation;
+            _partyCreation.OnCancel += ShowMainMenu;
         }
 
         public void ShowMainMenu()
@@ -37,9 +38,7 @@ namespace Gui
         {
             CurrentMenu = null;
 
-            var partyCreation = new PartyCreation(_gameView);
-            partyCreation.OnCancel += ShowMainMenu;
-            partyCreation.Show();
+            _partyCreation.Show();
         }
 
     }

@@ -31,6 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Ninject, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -41,12 +42,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CharacterVault.cs" />
+    <Compile Include="EventBus.cs" />
+    <Compile Include="GameModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Rules\Rules.csproj">
       <Project>{9C210D9D-BC98-4751-A53A-917C638EBB79}</Project>
       <Name>Rules</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Runtime\Runtime.csproj">
+      <Project>{C09ABF74-F6BD-46E3-A364-4B41B162021F}</Project>
+      <Name>Runtime</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

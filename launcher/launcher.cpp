@@ -5,6 +5,8 @@
 
 #include "mainwindow.h"
 
+#include "engine/scene.h"
+
 #include <QtMono/QtMono>
 #include <QtMono/QMonoConnectionManager>
 #include <QtMono/QMonoQObjectWrapper>
@@ -15,6 +17,7 @@
 #include <engine/mainwindow.h>
 #include <engine/paths.h>
 #include <engine/gameview.h>
+#include <engine/datafileengine.h>
 
 #include <QElapsedTimer>
 #include <QGLWidget>
@@ -39,8 +42,13 @@ int main(int argc, char* argv[])
 
     EvilTemple::Paths paths;
     
-    DataFileEngineHandler dataFileEngine(paths.installationDir().absoluteFilePath("data"));
-    dataFileEngine.addArchives(paths.generatedDataPath());
+    EvilTemple::DataFileEngineHandler dataFileEngine;
+    dataFileEngine.setDataPath(paths.installationDir().absoluteFilePath("data"));
+
+    QStringList archives = paths.generatedDataDir().entryList(QStringList() << "*.zip", QDir::Files);
+    foreach (const QString &archive, archives) {
+        dataFileEngine.addArchive(paths.generatedDataDir().absoluteFilePath(archive));
+    }
 
     loadFonts();
 
@@ -94,7 +102,8 @@ int main(int argc, char* argv[])
     gameView.resize(800, 600);
 	
     addSystemObject(image, "GameView", &gameView);
-    addSystemObject(image,"GameWindow", mainWindow);
+    addSystemObject(image, "GameWindow", mainWindow);
+    addSystemObject(image, "Paths", &paths);
     
     MonoMethodDesc startupMethodDesc("Bootstrap.Bootstrapper:Startup()");
 	

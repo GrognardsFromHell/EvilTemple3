@@ -13,6 +13,9 @@ xcopy /Y thirdparty\glew-1.5.7\bin\*.dll out\debug\bin
 xcopy /Y thirdparty\libavcodec-minimal\*.dll out\release\bin
 xcopy /Y thirdparty\libavcodec-minimal\*.dll out\debug\bin
 
+xcopy /Y thirdparty\ninject-2.0\*.dll out\release\bin
+xcopy /Y thirdparty\ninject-2.0\*.dll out\debug\bin
+
 cd launcher
 qmake -spec win32-msvc2010 -tp vc
 cd ..

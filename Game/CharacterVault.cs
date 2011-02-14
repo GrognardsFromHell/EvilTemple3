@@ -1,27 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Rules;
+using Runtime;
 
 namespace Game
 {
     public class CharacterVault
     {
 
-        private readonly string _pregeneratedPath;
-
-        private readonly string _userPath;
+        private readonly IPaths _paths;
 
         /// <summary>
         /// Constructs a character vault object.
         /// </summary>
-        /// <param name="pregeneratedPath">The path to the directory that contains pregenerated characters.</param>
-        /// <param name="userPath">The path to the directory containing user generated characters.</param>
-        public CharacterVault(string pregeneratedPath, string userPath)
+        /// <param name="paths">Provides path information for several of the game's data files.</param>
+        public CharacterVault(IPaths paths)
         {
-            _pregeneratedPath = pregeneratedPath;
-            _userPath = userPath;
+            _paths = paths;
         }
 
         /// <summary>
@@ -50,6 +45,8 @@ namespace Game
 
         private IList<PlayerCharacter> ReadCharacters()
         {
+            Console.WriteLine("Reading Characters: " + _paths.GeneratedDataPath);
+
             return new List<PlayerCharacter>();
         }
     }

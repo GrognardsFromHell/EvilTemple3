@@ -5,8 +5,9 @@
 #include <QtDeclarative/QDeclarativeEngine>
 
 #include "engine/global.h"
-#include "engine/clippinggeometry.h"
-#include "engine/modelfile.h"
+
+#include <gamemath.h>
+using namespace GameMath;
 
 namespace EvilTemple {
 

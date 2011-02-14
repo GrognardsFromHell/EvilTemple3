@@ -473,7 +473,7 @@ QVariant QMonoQObjectWrapper::convertObjectToVariant(mono::MonoObject *object)
         
         mono::MonoObject *exc = NULL;
 
-        QVariant result;
+        QVariant result(QVariant::List);
 
         QVariantList *listPtr = reinterpret_cast<QVariantList*>(result.data());
                 
