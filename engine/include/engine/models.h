@@ -13,7 +13,7 @@ class Materials;
 class RenderStates;
 class ModelsData;
 
-class Models : public QObject
+class ENGINE_EXPORT Models : public QObject
 {
     Q_OBJECT
 public:

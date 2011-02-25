@@ -75,6 +75,20 @@ namespace Rules
         public uint LandSpeed { get; set; }
 
         public uint StartingFeats { get; set; }
+
+        public VisualCharacteristics GetCharacteristics(Gender gender)
+        {
+            switch (gender)
+            {
+                case Gender.Female:
+                    return FemaleCharacteristics;
+                case Gender.Other:
+                case Gender.Male:
+                    return MaleCharacteristics;
+                default:
+                    throw new ArgumentOutOfRangeException("gender");
+            }
+        }
     }
 
     public class RaceNameComparer : IComparer<Race>

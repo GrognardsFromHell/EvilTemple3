@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using Runtime;
-
-using HandlerList = System.Collections.Generic.IList<Runtime.MessageHandler<Runtime.IMessage>>;
+using EvilTemple.Runtime;
 
 namespace Game
 {

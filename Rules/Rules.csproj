@@ -31,7 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Ninject, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL" />
+    <Reference Include="Ninject, Version=2.2.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -48,10 +48,21 @@
     <Compile Include="Module.cs" />
     <Compile Include="Party.cs" />
     <Compile Include="PlayerCharacter.cs" />
+    <Compile Include="Portrait.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Prototypes\BaseObjectPrototype.cs" />
+    <Compile Include="Prototypes\CritterPrototypes.cs" />
+    <Compile Include="Prototypes\Prototypes.cs" />
     <Compile Include="Race.cs" />
     <Compile Include="Races.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Runtime\Runtime.csproj">
+      <Project>{C09ABF74-F6BD-46E3-A364-4B41B162021F}</Project>
+      <Name>Runtime</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

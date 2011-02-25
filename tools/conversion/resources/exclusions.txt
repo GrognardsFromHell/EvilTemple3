@@ -1,0 +1,13 @@
+
+# These seem to be pre-alpha files for testing, which have a
+# broken file format
+art/meshes/player/*
+
+# This seems to be a broken tree (500kb for the model -> insane)
+art/meshes/scenery/foliage/tree1.*
+
+# The name says it all, uses variations (unsupported)
+art\meshes\particle\test.skm
+
+# Exclude all hair from automatic conversion. We'll do it manually.
+art\meshes\hair\

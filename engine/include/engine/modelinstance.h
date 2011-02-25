@@ -32,7 +32,7 @@ struct AddMesh {
 class ENGINE_EXPORT ModelInstance : public Renderable
 {
 Q_OBJECT
-Q_PROPERTY(const SharedModel &model READ model WRITE setModel)
+Q_PROPERTY(EvilTemple::SharedModel model READ model WRITE setModel)
 Q_PROPERTY(bool idling READ isIdling)
 Q_PROPERTY(QByteArray idleAnimation READ idleAnimation WRITE setIdleAnimation)
 Q_PROPERTY(bool drawBehindWalls READ drawsBehindWalls WRITE setDrawsBehindWalls)
@@ -72,10 +72,10 @@ public:
 public slots:
     Matrix4 getBoneSpace(uint boneId);
 
-    void addMesh(const SharedModel &model);
+    void addMesh(const EvilTemple::SharedModel &model);
     void clearAddMeshes();
 
-    bool overrideMaterial(const QByteArray &name, const SharedMaterialState &state);
+    bool overrideMaterial(const QByteArray &name, const EvilTemple::SharedMaterialState &state);
     bool clearOverrideMaterial(const QByteArray &name);
     void clearOverrideMaterials();
 

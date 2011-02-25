@@ -188,4 +188,6 @@ namespace EvilTemple {
 
 }
 
+Q_DECLARE_METATYPE(EvilTemple::SharedModel);
+
 #endif

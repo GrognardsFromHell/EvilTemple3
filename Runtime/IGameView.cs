@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Runtime
+﻿namespace EvilTemple.Runtime
 {
     public interface IGameView
     {
 
-        IGameScene Scene { get; }
+        IScene Scene { get; }
 
         /// <summary>
         /// Creates and adds an interface item to the game view.
@@ -23,5 +18,11 @@ namespace Runtime
         /// <param name="filename">The filename of the movie, relative to the data root.</param>
         /// <returns>True if the movie started playing successfully, false otherwise.</returns>
         bool PlayMovie(string filename);
+
+        /// <summary>
+        /// Close the game window.
+        /// </summary>
+        void Close();
+
     }
 }

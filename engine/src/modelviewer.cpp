@@ -209,10 +209,11 @@ void ModelViewer::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWi
     SAFE_GL(glEnable(GL_CULL_FACE));
     SAFE_GL(glEnable(GL_BLEND));
     SAFE_GL(glDisable(GL_STENCIL_TEST));
+    glDisable(GL_SCISSOR_TEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glClearColor(0, 0, 0, 0);
+    glClearColor(1, 0, 0, 1);
     glClearStencil(1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -251,6 +252,8 @@ void ModelViewer::paint(QPainter *painter, const QStyleOptionGraphicsItem *, QWi
     glPopMatrix();
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
+
+    image.save("D:/test.png");
 
     painter->drawImage(0, 0, image);
 }

@@ -36,12 +36,12 @@ public slots:
     /**
       Returns a material that can be used to represent a missing material.
       */
-    SharedMaterialState &missingMaterial();
+    EvilTemple::SharedMaterialState &missingMaterial();
 
     /**
       Retrieve a material.
       */
-    SharedMaterialState load(const QString &filename);
+    EvilTemple::SharedMaterialState load(const QString &filename);
 
 private:
     QScopedPointer<MaterialsData> d;

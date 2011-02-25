@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Runtime
+namespace EvilTemple.Runtime
 {
 
     public delegate void MessageHandler<in T>(T message) where T : IMessage;

@@ -54,17 +54,21 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CommonServiceLocator.NinjectAdapter">
+      <HintPath>..\thirdparty\ninject-2.2\extensions\CommonServiceLocator.NinjectAdapter.dll</HintPath>
+    </Reference>
     <Reference Include="Engine.Interop">
       <HintPath>..\out\debug\bin\Engine.Interop.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Ninject, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Practices.ServiceLocation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="Ninject, Version=2.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\thirdparty\ninject-2.2\Ninject.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Interop\GameScene.cs" />
-    <Compile Include="Interop\GameView.cs" />
-    <Compile Include="Interop\GameWindow.cs" />
     <Compile Include="Paths.cs" />
     <Compile Include="Startup.cs" />
   </ItemGroup>

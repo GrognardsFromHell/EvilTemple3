@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using Ninject.Modules;
 using Ninject;
-using Runtime;
-using Runtime.Messages;
+using EvilTemple.Runtime;
+using EvilTemple.Runtime.Messages;
 
 namespace Gui
 {
@@ -22,10 +22,10 @@ namespace Gui
 
         private void ShowMainMenu(ApplicationStartup message)
         {
-            var gameWindow = Kernel.Get<IGameWindow>();
+            var gameView = Kernel.Get<IGameView>();
 
             var mainMenu = Kernel.Get<MainMenu>();
-            mainMenu.OnExitGame += delegate { gameWindow.Close(); };
+            mainMenu.OnExitGame += delegate { gameView.Close(); };
             mainMenu.ShowMainMenu();
         }
     }

@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Ninject">
-      <HintPath>..\thirdparty\ninject-2.0\Ninject.dll</HintPath>
+      <HintPath>..\thirdparty\ninject-2.2\Ninject.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

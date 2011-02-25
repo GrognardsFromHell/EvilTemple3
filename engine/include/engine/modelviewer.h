@@ -20,8 +20,8 @@ class ModelViewer : public QDeclarativeItem
     Q_OBJECT
     Q_PROPERTY(float modelScale READ modelScale WRITE setModelScale)
     Q_PROPERTY(float modelRotation READ modelRotation WRITE setModelRotation)
-    Q_PROPERTY(ModelInstance *modelInstance READ modelInstance)
-    Q_PROPERTY(Materials *materials READ materials)
+    Q_PROPERTY(EvilTemple::ModelInstance *modelInstance READ modelInstance)
+    Q_PROPERTY(EvilTemple::Materials *materials READ materials)
 public:
     ModelViewer();
     ~ModelViewer();

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Dynamic;
 using System.Linq;
+using Game;
 using Rules;
-using Runtime;
+using EvilTemple.Runtime;
 
 namespace Gui
 {
@@ -14,10 +15,13 @@ namespace Gui
 
         private readonly Races _races;
 
-        public CreateCharacter(IGameView gameView, Races races)
+        private readonly IModels _models;
+
+        public CreateCharacter(IGameView gameView, IModels models, Races races)
         {
             _gameView = gameView;
             _races = races;
+            _models = models;
         }
 
         public event Action OnCancel;
@@ -25,6 +29,8 @@ namespace Gui
         private delegate void StatsDistributedAction(int str, int dex, int con, int intl, int wis, int cha);
 
         private PlayerCharacter currentCharacter = new PlayerCharacter();
+
+        private ModelInstance _modelInstance;
 
         public void Show()
         {
@@ -44,6 +50,9 @@ namespace Gui
             // Start with the stats page
             CurrentMenu.overallStage = Stage.Stats;
             CurrentMenu.activeStage = Stage.Stats;
+
+            _modelInstance = new ModelInstance(CurrentMenu.getModelViewer().modelInstance,
+                currentCharacter);
         }
 
         private void LoadRaces()
@@ -164,7 +173,32 @@ namespace Gui
 
         private void UpdateModelViewer()
         {
-            // TODO: Implement
+            if (currentCharacter.Race == null || currentCharacter.Gender == Gender.Other)
+                return;
+
+            var characteristics = currentCharacter.Race.GetCharacteristics(currentCharacter.Gender);
+            var prototypeId = characteristics.Prototype;
+
+            Console.WriteLine("Setting prototype of new character to " + prototypeId);
+
+            // currentCharacter.prototype = prototypeId;
+            // Prototypes.reconnect(currentCharacter);
+
+            var modelViewer = CurrentMenu.getModelViewer();
+
+            modelViewer.modelRotation = -120;
+
+            currentCharacter.Model = "meshes/PCs/PC_Human_Male/PC_Human_Male.model";
+
+            var modelInstance = modelViewer.modelInstance;
+            modelInstance.model = _models.Load(currentCharacter.Model);
+            
+            Console.WriteLine("Loading model: " + currentCharacter.Model);
+
+            var materials = modelViewer.materials;
+            var material = materials.load("meshes/PCs/PC_Human_Male/CHEST.xml");
+            modelInstance.overrideMaterial("CHEST", material);
+            // Equipment.addRenderEquipment(currentCharacter, model, modelViewer.materials, null);
         }
 
         private void UpdateCharacterSheet()

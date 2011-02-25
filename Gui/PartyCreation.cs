@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Game;
 using Rules;
-using Runtime;
+using EvilTemple.Runtime;
 
 namespace Gui
 {

@@ -272,4 +272,6 @@ inline const QString &MaterialState::error() const
 
 }
 
+Q_DECLARE_METATYPE(EvilTemple::SharedMaterialState);
+
 #endif // MATERIALSTATE_H

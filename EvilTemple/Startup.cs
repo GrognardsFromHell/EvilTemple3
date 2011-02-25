@@ -1,13 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using CommonServiceLocator.NinjectAdapter;
 using EngineInterop;
+using Microsoft.Practices.ServiceLocation;
 using Ninject;
 using Ninject.Modules;
 using Ninject.Syntax;
-using Runtime;
-using EvilTemple.Interop;
-using Runtime.Messages;
+using EvilTemple.Runtime;
+using EvilTemple.Runtime.Messages;
 
 namespace EvilTemple
 {
@@ -17,6 +18,8 @@ namespace EvilTemple
         public static void Main(string[] args)
         {
             IKernel kernel = new StandardKernel();
+            var locator = new NinjectServiceLocator(kernel);
+            ServiceLocator.SetLocatorProvider(() => locator);
 
             using (var resourceManager = new ResourceManager())
             {
@@ -61,8 +64,9 @@ namespace EvilTemple
 
         private static void AddEngineObjects(IBindingRoot kernel, Engine engine)
         {
-            kernel.Bind<IGameView>().ToConstant(new GameView(engine.GameView));
-            kernel.Bind<IGameWindow>().ToConstant(new GameWindow(engine.GameView));
+            kernel.Bind<IGameView>().ToConstant(engine.GameView);
+            kernel.Bind<IScene>().ToConstant(engine.Scene);
+            kernel.Bind<IModels>().ToConstant(engine.Models);
             kernel.Bind<IPaths>().ToConstant(new Paths());
         }
 

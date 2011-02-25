@@ -1,9 +1,9 @@
 ﻿using System;
 
-namespace Runtime
+namespace EvilTemple.Runtime
 {
 
-    public delegate void DrawFrameHandler(dynamic obj);
+    public delegate void DrawFrameHandler();
 
     /// <summary>
     /// The window used to display graphical game data. There can only be one instance of this, and it
